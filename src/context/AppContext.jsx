@@ -592,13 +592,15 @@ export function AppProvider({ children }) {
     };
 
     setStudents((prev) => [newStudent, ...prev]);
-    await syncStudentToCloud(newStudent);
+    syncStudentToCloud(newStudent).catch((e) => console.warn('Student cloud sync notice:', e));
     return newStudent;
   };
 
   const deleteStudent = (studentId) => {
-    setStudents((prev) => prev.filter((s) => s.id !== studentId));
-    if (selectedStudent?.id === studentId) setSelectedStudent(null);
+    setStudents((prev) => prev.filter((s) => String(s.id) !== String(studentId)));
+    if (selectedStudent && String(selectedStudent.id) === String(studentId)) {
+      setSelectedStudent(null);
+    }
   };
 
   const addStudentsBatch = async (newStudentsList) => {
@@ -652,8 +654,12 @@ export function AppProvider({ children }) {
   // ACTIONS: ASSESSMENT ENGINE & COGNITIVE ANALYSIS
   // -------------------------------------------------------------
   const recordAssessment = async (studentId, assessmentData) => {
-    const student = students.find((s) => s.id === studentId);
-    if (!student) return null;
+    const targetIdStr = String(studentId);
+    const student = students.find((s) => String(s.id) === targetIdStr);
+    if (!student) {
+      console.warn(`Student with ID ${studentId} not found in roster`, students);
+      return null;
+    }
 
     const mathAns = assessmentData.mathAnswer ? String(assessmentData.mathAnswer).trim() : '35';
     const numAns = Number(mathAns);
@@ -723,7 +729,7 @@ export function AppProvider({ children }) {
       }
     };
 
-    setStudents((prev) => prev.map((s) => s.id === studentId ? updatedStudent : s));
+    setStudents((prev) => prev.map((s) => String(s.id) === targetIdStr ? updatedStudent : s));
 
     // Update or add to Learning Cycle
     const newCycleEntry = {
@@ -750,18 +756,19 @@ export function AppProvider({ children }) {
 
     setLearningCycles((prev) => [newCycleEntry, ...prev]);
 
-    // Sync assessment to cloud
-    await syncAssessmentToCloud({
-      student_id: student.id,
+    // Asynchronous background sync without blocking local state
+    syncAssessmentToCloud({
+      student_id: String(student.id),
+      studentId: String(student.id),
       math_problem: '52 - 27',
       student_math_answer: mathAns,
       detected_misconception: misconceptionDetected ? misconceptionDetected.title : null,
       cognitive_diagnosis: misconceptionDetected ? misconceptionDetected.example : 'Normal evaluation',
       recommended_tarl_group: newTarlGroup,
       wcpm: Number(assessmentData.wcpm) || 35
-    });
+    }).catch((e) => console.warn('Assessment cloud sync notice:', e));
 
-    await syncStudentToCloud(updatedStudent);
+    syncStudentToCloud(updatedStudent).catch((e) => console.warn('Student cloud sync notice:', e));
 
     return updatedStudent;
   };

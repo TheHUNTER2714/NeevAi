@@ -204,17 +204,19 @@ export async function syncAssessmentToCloud(assessmentData) {
       const { data, error } = await supabase
         .from('assessments')
         .insert({
-          student_id: assessmentData.studentId,
+          id: assessmentData.id || `ass-${Date.now()}`,
+          student_id: String(assessmentData.student_id || assessmentData.studentId || ''),
           test_date: new Date().toISOString(),
-          literacy_score: assessmentData.literacyScore || 0,
-          numeracy_score: assessmentData.numeracyScore || 0,
-          wcpm: assessmentData.wcpm || 0,
-          accuracy: assessmentData.accuracy || 0,
-          math_problem: assessmentData.mathProblem,
-          math_student_ans: assessmentData.mathStudentAns,
-          math_correct: assessmentData.mathCorrect,
-          detected_misconception: assessmentData.detectedMisconception,
-          tarl_recommendation: assessmentData.tarlRecommendation
+          literacy_score: Number(assessmentData.literacy_score || assessmentData.literacyScore || 0),
+          numeracy_score: Number(assessmentData.numeracy_score || assessmentData.numeracyScore || 0),
+          wcpm: Number(assessmentData.wcpm || 0),
+          accuracy: Number(assessmentData.accuracy || 0),
+          math_problem: assessmentData.math_problem || assessmentData.mathProblem || '52 - 27',
+          student_math_answer: String(assessmentData.student_math_answer || assessmentData.studentMathAnswer || assessmentData.student_math_ans || ''),
+          detected_misconception: assessmentData.detected_misconception || assessmentData.detectedMisconception || null,
+          cognitive_diagnosis: assessmentData.cognitive_diagnosis || assessmentData.cognitiveDiagnosis || null,
+          recommended_tarl_group: assessmentData.recommended_tarl_group || assessmentData.recommendedTarlGroup || assessmentData.tarlRecommendation || null,
+          raw_answers: assessmentData.raw_answers || assessmentData.rawAnswers || {}
         });
       if (error) throw error;
       return { synced: true, data };

@@ -27,11 +27,11 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
     assessments, 
     setActiveAssessmentId, 
     setIsCreateAssessmentModalOpen,
-    students,
-    recordAssessment,
-    assessmentTargetStudent,
-    setAssessmentTargetStudent,
-    setSelectedStudent
+    students, 
+    recordAssessment, 
+    assessmentTargetStudent, 
+    setSelectedStudent,
+    setIsAddStudentModalOpen 
   } = useApp();
 
   const [currentStep, setCurrentStep] = useState(0); // 0: Comparison, 1: Math puzzle, 2: Reading, 3: Final Report
@@ -40,16 +40,23 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
 
   // Target Student state (defaults to assessmentTargetStudent or first student in class)
   const [activeStudentId, setActiveStudentId] = useState(
-    () => assessmentTargetStudent?.id || (students && students.length > 0 ? students[0].id : 1)
+    () => assessmentTargetStudent?.id || (students && students.length > 0 ? students[0].id : '')
   );
 
   useEffect(() => {
     if (assessmentTargetStudent?.id) {
       setActiveStudentId(assessmentTargetStudent.id);
+    } else if (students && students.length > 0) {
+      const exists = students.some((s) => String(s.id) === String(activeStudentId));
+      if (!exists) {
+        setActiveStudentId(students[0].id);
+      }
+    } else {
+      setActiveStudentId('');
     }
-  }, [assessmentTargetStudent]);
+  }, [assessmentTargetStudent, students, activeStudentId]);
 
-  const currentStudent = (students && students.find((s) => s.id === Number(activeStudentId))) || (students && students[0]) || {
+  const currentStudent = (students && students.find((s) => String(s.id) === String(activeStudentId))) || (students && students[0]) || {
     id: 999,
     rollNo: 1,
     name: lang === 'hi' ? 'परीक्षार्थी छात्र' : 'Student Candidate',
@@ -247,7 +254,7 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
 
   const handleSelectNextStudent = () => {
     if (students && students.length > 0) {
-      const currentIndex = students.findIndex((s) => s.id === currentStudent.id);
+      const currentIndex = students.findIndex((s) => String(s.id) === String(currentStudent.id));
       const nextIndex = (currentIndex + 1) % students.length;
       setActiveStudentId(students[nextIndex].id);
       handleReset();
@@ -267,12 +274,12 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
             </PulsingBadge>
 
             {/* Student Switcher Pill */}
-            {students && students.length > 0 && (
+            {students && students.length > 0 ? (
               <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-700 px-3 py-1 rounded-full text-xs font-mono">
                 <span className="text-slate-400">Student:</span>
                 <select
                   value={activeStudentId}
-                  onChange={(e) => setActiveStudentId(Number(e.target.value))}
+                  onChange={(e) => setActiveStudentId(e.target.value)}
                   className="bg-transparent text-amber-300 font-bold focus:outline-none cursor-pointer text-xs"
                 >
                   {students.map((s) => (
@@ -282,6 +289,13 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
                   ))}
                 </select>
               </div>
+            ) : (
+              <button
+                onClick={() => setIsAddStudentModalOpen(true)}
+                className="flex items-center gap-1.5 bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 px-3 py-1 rounded-full text-xs font-mono hover:bg-cyan-900 transition-colors"
+              >
+                <span>+ {lang === 'hi' ? 'पहले छात्र जोड़ें' : 'Enroll Student First'}</span>
+              </button>
             )}
 
             {/* Assessment Switcher Pill */}

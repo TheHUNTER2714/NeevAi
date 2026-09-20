@@ -112,24 +112,25 @@ export async function insertAssessment(a) {
   const query = `
     INSERT INTO assessments (
       id, student_id, test_date, literacy_score, numeracy_score, 
-      wcpm, accuracy, math_problem, math_student_ans, math_correct, 
-      detected_misconception, tarl_recommendation
+      wcpm, accuracy, math_problem, student_math_answer, 
+      detected_misconception, cognitive_diagnosis, recommended_tarl_group, raw_answers
     )
-    VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING *;
   `;
   const values = [
     a.id || `ass-${Date.now()}`,
-    a.studentId,
-    a.literacyScore || 0,
-    a.numeracyScore || 0,
-    a.wcpm || 0,
-    a.accuracy || 0,
-    a.mathProblem || '52 - 27',
-    a.mathStudentAns || '',
-    a.mathCorrect ?? false,
-    JSON.stringify(a.detectedMisconception || {}),
-    a.tarlRecommendation || ''
+    String(a.student_id || a.studentId || ''),
+    Number(a.literacy_score || a.literacyScore || 0),
+    Number(a.numeracy_score || a.numeracyScore || 0),
+    Number(a.wcpm || 0),
+    Number(a.accuracy || 0),
+    a.math_problem || a.mathProblem || '52 - 27',
+    String(a.student_math_answer || a.studentMathAnswer || a.student_math_ans || a.math_student_ans || a.mathStudentAns || ''),
+    a.detected_misconception || a.detectedMisconception || null,
+    a.cognitive_diagnosis || a.cognitiveDiagnosis || null,
+    a.recommended_tarl_group || a.recommendedTarlGroup || a.tarlRecommendation || null,
+    JSON.stringify(a.raw_answers || a.rawAnswers || {})
   ];
   const res = await pool.query(query, values);
   return res.rows[0];

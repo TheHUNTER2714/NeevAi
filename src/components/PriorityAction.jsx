@@ -361,7 +361,7 @@ export function PriorityAction({ lang, onOpenMisconception }) {
                 <div className="text-right">
                   <span className="text-[11px] font-mono text-slate-400">Class Progress</span>
                   <p className="text-xs font-bold text-emerald-400">
-                    {masteredCount} of 8 Mastered
+                    {masteredCount} of {studentsChecklist.length} Mastered
                   </p>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export function PriorityAction({ lang, onOpenMisconception }) {
 
             </div>
 
-            {/* Right: Live 8-Student Mastery Tally */}
+            {/* Right: Live Student Mastery Tally */}
             <div className="lg:col-span-5 bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -424,7 +424,7 @@ export function PriorityAction({ lang, onOpenMisconception }) {
                     {lang === 'hi' ? 'छात्र समझ जांच तालिका' : 'Check off as Child Grasps Borrowing'}
                   </span>
                   <span className="text-[10px] font-mono text-cyan-400">
-                    {Math.round((masteredCount / 8) * 100)}%
+                    {studentsChecklist.length > 0 ? Math.round((masteredCount / studentsChecklist.length) * 100) : 0}%
                   </span>
                 </div>
                 
@@ -432,7 +432,7 @@ export function PriorityAction({ lang, onOpenMisconception }) {
                 <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-3">
                   <div 
                     className="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full transition-all duration-300"
-                    style={{ width: `${(masteredCount / 8) * 100}%` }}
+                    style={{ width: `${studentsChecklist.length > 0 ? (masteredCount / studentsChecklist.length) * 100 : 0}%` }}
                   />
                 </div>
 
@@ -455,10 +455,10 @@ export function PriorityAction({ lang, onOpenMisconception }) {
                 </div>
               </div>
 
-              {masteredCount === 8 && (
+              {studentsChecklist.length > 0 && masteredCount === studentsChecklist.length && (
                 <div className="mt-3 p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-center animate-bounce">
                   <span className="text-xs font-bold text-emerald-300">
-                    🎉 Outstanding! All 8 students resolved the borrowing gap!
+                    🎉 {lang === 'hi' ? `शानदार! सभी ${studentsChecklist.length} छात्रों ने समस्या दूर कर ली!` : `Outstanding! All ${studentsChecklist.length} students resolved the borrowing gap!`}
                   </span>
                 </div>
               )}

@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, 
   GraduationCap, 
-  CheckCircle2
+  CheckCircle2,
+  Brain,
+  Sparkles,
+  Save,
+  UserPlus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
@@ -18,13 +22,16 @@ export function AssessmentEntryModal() {
     assessmentTargetStudent,
     students, 
     recordAssessment, 
+    setIsAddStudentModalOpen,
     lang 
   } = useApp();
 
   // Selected student
-  const [selectedStudentId, setSelectedStudentId] = useState(
-    assessmentTargetStudent?.id || (students[0]?.id || 1)
-  );
+  const [selectedStudentId, setSelectedStudentId] = useState(() => {
+    if (assessmentTargetStudent?.id) return assessmentTargetStudent.id;
+    if (students && students.length > 0) return students[0].id;
+    return '';
+  });
 
   // Math test data
   const [mathAnswer, setMathAnswer] = useState('35');
@@ -38,12 +45,19 @@ export function AssessmentEntryModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resultSummary, setResultSummary] = useState(null);
 
-  // Sync if target student changed
+  // Keep selectedStudentId synced whenever target student, students roster, or modal changes
   useEffect(() => {
     if (assessmentTargetStudent?.id) {
       setSelectedStudentId(assessmentTargetStudent.id);
+    } else if (students && students.length > 0) {
+      const exists = students.some((s) => String(s.id) === String(selectedStudentId));
+      if (!exists) {
+        setSelectedStudentId(students[0].id);
+      }
+    } else {
+      setSelectedStudentId('');
     }
-  }, [assessmentTargetStudent]);
+  }, [assessmentTargetStudent, students, isAssessmentModalOpen]);
 
   // Live cognitive diagnostic feedback
   const getCognitivePreview = (ans) => {
@@ -82,27 +96,35 @@ export function AssessmentEntryModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedStudentId) return;
     setIsSubmitting(true);
 
-    const updated = await recordAssessment(Number(selectedStudentId), {
-      mathAnswer,
-      canRecognize1Digit,
-      wcpm: Number(wcpm),
-      canReadLetters,
-      comprehensionPass
-    });
+    try {
+      const updated = await recordAssessment(selectedStudentId, {
+        mathAnswer,
+        canRecognize1Digit,
+        wcpm: Number(wcpm) || 38,
+        canReadLetters,
+        comprehensionPass
+      });
 
-    setIsSubmitting(false);
-    setResultSummary(updated);
-    confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
+      setIsSubmitting(false);
+      if (updated) {
+        setResultSummary(updated);
+        confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
 
-    setTimeout(() => {
-      setResultSummary(null);
-      setIsAssessmentModalOpen(false);
-    }, 1800);
+        setTimeout(() => {
+          setResultSummary(null);
+          setIsAssessmentModalOpen(false);
+        }, 1800);
+      }
+    } catch (err) {
+      console.error('Assessment record error:', err);
+      setIsSubmitting(false);
+    }
   };
 
-  const targetStudentObj = students.find((s) => s.id === Number(selectedStudentId)) || students[0];
+  const targetStudentObj = (students || []).find((s) => String(s.id) === String(selectedStudentId)) || students[0];
 
   if (!isAssessmentModalOpen) return null;
 
@@ -141,26 +163,53 @@ export function AssessmentEntryModal() {
           </div>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-5 mt-5 relative z-10">
-          
-          {/* Student Selector */}
-          <div>
-            <label className="text-xs font-mono font-semibold text-slate-300 block mb-1.5">
-              {lang === 'hi' ? 'विद्यार्थी चुनें *' : 'Select Target Student *'}
-            </label>
-            <select
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(Number(e.target.value))}
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none focus:border-cyan-400"
+        {/* Empty Roster Guard */}
+        {!students || students.length === 0 ? (
+          <div className="text-center py-10 px-4 space-y-4 relative z-10">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
+              <UserPlus className="w-7 h-7" />
+            </div>
+            <h4 className="text-base font-bold text-white font-display">
+              {lang === 'hi' ? 'कक्षा में कोई विद्यार्थी नामांकित नहीं है' : 'No Students Enrolled in Class Yet'}
+            </h4>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto font-body leading-relaxed">
+              {lang === 'hi' 
+                ? 'आकलन दर्ज करने से पहले कृपया अपनी कक्षा में विद्यार्थी जोड़ें।' 
+                : 'Please register at least one student in your roster before recording an assessment.'}
+            </p>
+            <ShimmerButton
+              onClick={() => {
+                setIsAssessmentModalOpen(false);
+                setIsAddStudentModalOpen(true);
+              }}
+              shimmerColor="#06b6d4"
+              className="px-5 py-2.5 text-slate-950 font-bold text-xs mx-auto flex items-center gap-2"
             >
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  Roll #{s.rollNo}: {s.name} ({s.currentLevel}) — {s.tarlGroup}
-                </option>
-              ))}
-            </select>
+              <UserPlus className="w-4 h-4" />
+              <span>{lang === 'hi' ? '+ नया विद्यार्थी जोड़ें' : '+ Register Student First'}</span>
+            </ShimmerButton>
           </div>
+        ) : (
+          /* Form Body */
+          <form onSubmit={handleSubmit} className="space-y-5 mt-5 relative z-10">
+            
+            {/* Student Selector */}
+            <div>
+              <label className="text-xs font-mono font-semibold text-slate-300 block mb-1.5">
+                {lang === 'hi' ? 'विद्यार्थी चुनें *' : 'Select Target Student *'}
+              </label>
+              <select
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none focus:border-cyan-400"
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    Roll #{s.rollNo}: {lang === 'hi' ? (s.nameHi || s.name) : s.name} ({s.currentLevel}) — {s.tarlGroup}
+                  </option>
+                ))}
+              </select>
+            </div>
 
           {/* Section A: Numeracy Diagnostic Screener */}
           <SpotlightCard 
@@ -319,6 +368,7 @@ export function AssessmentEntryModal() {
             </ShimmerButton>
           </div>
         </form>
+        )}
 
       </div>
     </div>
