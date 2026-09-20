@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-kidwise: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --font-display: 'Outfit', -apple-system, sans-serif;
+    --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* KidWise Color System (Dribbble 26730071 Inspiration) */
+    --color-kidwise-sunshine: #f59e0b;
+    --color-kidwise-amber: #fbbf24;
+    --color-kidwise-violet: #8b5cf6;
+    --color-kidwise-indigo: #6366f1;
+    --color-kidwise-mint: #10b981;
+    --color-kidwise-cyan: #06b6d4;
+    --color-kidwise-coral: #f43f5e;
+
+    /* Warm Midnight Canvas Base */
+    --color-bg-base: #050816;
+    --color-bg-surface: #090e26;
+    --color-bg-elevated: #0f173d;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: #050816;
+    color: #f8fafc;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  .font-kidwise {
+    font-family: var(--font-kidwise);
+    letter-spacing: 0.01em;
+  }
+}
+
+/* Custom Sleek KidWise Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #050816;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8b5cf6;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* ========================================================================= */
+/* ANIMATED FONT UTILITIES & KEYFRAMES                                       */
+/* ========================================================================= */
+@keyframes font-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes letter-bounce {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes text-glow-pulse {
+  0%, 100% {
+    text-shadow: 0 0 15px rgba(245, 158, 11, 0.5), 0 0 30px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 25px rgba(139, 92, 246, 0.7), 0 0 40px rgba(6, 182, 212, 0.5);
+  }
+}
+
+.animate-font-shimmer {
+  animation: font-shimmer 4s ease infinite;
+  background-size: 200% 200%;
+}
+
+.animate-letter-bounce {
+  animation: letter-bounce 2s ease-in-out infinite;
+}
+
+.animate-text-glow {
+  animation: text-glow-pulse 3s ease-in-out infinite;
+}
+
+/* ========================================================================= */
+/* KIDWISE VIBRANT GRADIENT TEXT HELPERS                                     */
+/* ========================================================================= */
+.text-gradient-kidwise {
+  background: linear-gradient(135deg, #f59e0b 0%, #ec4899 40%, #8b5cf6 75%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-sunshine {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-violet {
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-mint {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ========================================================================= */
+/* KIDWISE SPECULAR GLASSMORPHISM SYSTEM                                      */
+/* ========================================================================= */
+.glass-panel {
+  background: rgba(9, 14, 36, 0.78);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-top: 1px solid rgba(245, 158, 11, 0.28);
+  box-shadow: 
+    0 24px 50px -15px rgba(0, 0, 0, 0.8), 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+    0 0 1px 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.glass-panel-elevated {
+  background: rgba(13, 20, 48, 0.85);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 1px solid rgba(139, 92, 246, 0.35);
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.88), 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+    0 0 35px -5px rgba(139, 92, 246, 0.18);
+}
+
+.glass-panel-hover {
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(18, 28, 62, 0.90);
+  border-color: rgba(245, 158, 11, 0.45);
+  border-top-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.85), 
+    0 0 35px -5px rgba(245, 158, 11, 0.3),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.glass-pill {
+  background: rgba(20, 30, 60, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* ========================================================================= */
+/* GLOW UTILITIES                                                            */
+/* ========================================================================= */
+.glow-sunshine {
+  box-shadow: 0 0 40px -8px rgba(245, 158, 11, 0.6);
+}
+
+.glow-violet {
+  box-shadow: 0 0 40px -8px rgba(139, 92, 246, 0.6);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 40px -8px rgba(16, 185, 129, 0.6);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 40px -8px rgba(6, 182, 212, 0.6);
+}
+
+.glow-coral {
+  box-shadow: 0 0 40px -8px rgba(244, 63, 94, 0.6);
+}
+
+/* 21st.dev signature keyframes */
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes shiny-text {
+  0% {
+    background-position: calc(-100% - var(--shimmer-width, 100px)) 0;
+  }
+  100% {
+    background-position: calc(100% + var(--shimmer-width, 100px)) 0;
+  }
+}
+
+@keyframes ripple {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 0.8;
+  }
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(215deg) translateX(-500px);
+    opacity: 0;
+  }
+}
+
+.animate-border-beam {
+  animation: border-beam var(--duration, 8s) infinite linear;
+}
+
+.animate-shiny-text {
+  animation: shiny-text 3.5s infinite linear;
+}
+
+.animate-ripple {
+  animation: ripple 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}
+
+.animate-meteor {
+  animation: meteor 5s linear infinite;
+}
+
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+}
