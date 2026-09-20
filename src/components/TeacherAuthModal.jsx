@@ -28,8 +28,10 @@ export function TeacherAuthModal() {
     isAuthModalOpen, 
     setIsAuthModalOpen, 
     teacher, 
-    updateTeacherProfile, 
+    loginTeacher,
+    registerTeacher,
     setDemoTeacher,
+    setCurrentView,
     lang 
   } = useApp();
 
@@ -43,12 +45,12 @@ export function TeacherAuthModal() {
   const [state, setState] = useState(teacher?.state || '');
   const [email, setEmail] = useState(teacher?.email || '');
   const [phone, setPhone] = useState(teacher?.phone || '');
-  const [password, setPassword] = useState('••••••••');
+  const [password, setPassword] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Sync if teacher changes
   useEffect(() => {
-    if (teacher) {
+    if (teacher && teacher.isDemo) {
       setName(teacher.name || '');
       setSchool(teacher.school || '');
       setDistrict(teacher.district || '');
@@ -70,24 +72,34 @@ export function TeacherAuthModal() {
     setTimeout(() => {
       setSavedSuccess(false);
       setIsAuthModalOpen(false);
-    }, 800);
+      setCurrentView('dashboard');
+    }, 600);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await updateTeacherProfile({
-      name: name || 'Sunita Devi',
-      school: school || 'Govt. Primary School, Kheda',
-      district: district || 'Bilaspur',
-      state: state || 'Chhattisgarh',
-      email,
-      phone
-    });
+    if (authMode === 'signin') {
+      await loginTeacher({
+        email: email || name || 'educator@gov.in',
+        name: name || 'Educator',
+        password: password || 'password'
+      });
+    } else {
+      await registerTeacher({
+        name: name || 'New Educator',
+        school: school || 'Primary School',
+        district: district || 'District Center',
+        state: state || 'State Education Board',
+        email: email || `${name.toLowerCase().replace(/\s+/g, '.') || 'educator'}@school.edu`,
+        phone: phone || '+91 90000 00000'
+      });
+    }
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       setIsAuthModalOpen(false);
-    }, 800);
+      setCurrentView('dashboard');
+    }, 600);
   };
 
   if (!isAuthModalOpen) return null;

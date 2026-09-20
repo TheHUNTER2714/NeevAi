@@ -17,6 +17,7 @@ import { AddStudentModal } from './components/AddStudentModal';
 import { AddClassModal } from './components/AddClassModal';
 import { AssessmentEntryModal } from './components/AssessmentEntryModal';
 import { CreateAssessmentModal } from './components/CreateAssessmentModal';
+import { DocumentRosterImporterModal } from './components/DocumentRosterImporterModal';
 import { KidWiseAnimatedBackground } from './components/ui/KidWiseAnimatedBackground';
 
 function AppContent() {
@@ -129,6 +130,7 @@ function AppContent() {
       <AddClassModal />
       <AssessmentEntryModal />
       <CreateAssessmentModal />
+      <DocumentRosterImporterModal />
 
       {/* Floating AI Pedagogical Assistant Drawer */}
       <AskLearnLensDrawer

@@ -14,7 +14,8 @@ import {
   X,
   Globe,
   Check,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BorderBeam } from './ui/BorderBeam';
@@ -24,7 +25,7 @@ import { TRANSLATIONS } from '../data/translations';
 
 export function Navbar({ currentView, setCurrentView, lang, setLang, openAssistant }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
-  const { teacher, setIsAuthModalOpen } = useApp();
+  const { teacher, setIsAuthModalOpen, logoutTeacher } = useApp();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -115,20 +116,31 @@ export function Navbar({ currentView, setCurrentView, lang, setLang, openAssista
         {/* Right Section: Teacher Badge, AI Assistant, and 3-Dot Navigation Menu */}
         <div className="flex items-center gap-2.5">
           
-          {/* Educator Sign In & Profile Button */}
-          <button
-            onClick={() => setIsAuthModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-950/50 via-slate-900/90 to-slate-900/90 hover:from-rose-900/60 hover:to-slate-800 border border-rose-500/40 hover:border-rose-400/70 text-xs transition-all shadow-md shadow-rose-950/30 cursor-pointer group"
-            title={lang === 'hi' ? 'शिक्षक साइन इन एवं विद्यालय प्रोफ़ाइल' : 'Educator Sign In & School Profile'}
-          >
-            <div className="w-2 h-2 rounded-full bg-rose-500 group-hover:scale-125 transition-transform animate-pulse" />
-            <span className="font-bold text-rose-200 group-hover:text-white text-xs">
-              {teacher?.isDemo ? (lang === 'hi' ? 'साइन इन / प्रोफ़ाइल' : 'Sign In') : teacher.name}
-            </span>
-            <span className="text-[10px] text-slate-400 hidden sm:inline border-l border-slate-700 pl-2">
-              {teacher?.school || 'Primary School'}
-            </span>
-          </button>
+          {/* Educator Sign In & Profile / Logout */}
+          <div className="flex items-center gap-1 bg-gradient-to-r from-rose-950/40 via-slate-900/90 to-slate-900/90 border border-rose-500/40 rounded-xl p-0.5">
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-800/80 rounded-lg text-xs transition-all cursor-pointer group"
+              title={lang === 'hi' ? 'शिक्षक साइन इन एवं विद्यालय प्रोफ़ाइल' : 'Educator Sign In & School Profile'}
+            >
+              <div className="w-2 h-2 rounded-full bg-rose-500 group-hover:scale-125 transition-transform animate-pulse" />
+              <span className="font-bold text-rose-200 group-hover:text-white text-xs">
+                {teacher?.isDemo ? (lang === 'hi' ? 'सुनीता देवी (डेमो)' : 'Sunita Devi (Demo)') : (teacher?.name || 'Sign In')}
+              </span>
+              <span className="text-[10px] text-slate-400 hidden sm:inline border-l border-slate-700 pl-2">
+                {teacher?.school ? teacher.school.slice(0, 18) + (teacher.school.length > 18 ? '...' : '') : 'Primary School'}
+              </span>
+            </button>
+
+            {/* Logout button */}
+            <button
+              onClick={logoutTeacher}
+              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors"
+              title={lang === 'hi' ? 'लॉगआउट' : 'Logout'}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {/* 21st.dev Shimmer Button for AI Assistant with NeevAI Logo */}
           <ShimmerButton

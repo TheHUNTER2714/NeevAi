@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { STUDENTS_DATA } from '../data/classroomData';
+import { STUDENTS_DATA, TWO_DEMO_STUDENTS } from '../data/classroomData';
 import { 
   getSupabaseCredentials, 
   saveSupabaseCredentials, 
@@ -21,7 +21,8 @@ const DEFAULT_TEACHER = {
   email: 'sunita.devi.edu@gov.in',
   phone: '+91 98271 45092',
   grade: 'Grade 3',
-  isDemo: true
+  isDemo: true,
+  isAuthenticated: false
 };
 
 const DEFAULT_CLASSES = [
@@ -143,9 +144,34 @@ export function AppProvider({ children }) {
   });
 
   // 7. Students state
+  // Clean onboarding: real teachers start with [] (zero pre-loaded student data).
+  // Demo mode has exactly the 2 demo students (Priya Sharma & Aarav Patel).
   const [students, setStudents] = useState(() => {
+    const savedTeacherStr = localStorage.getItem('learnlens_teacher');
+    let isDemo = false;
+    if (savedTeacherStr) {
+      try {
+        const tObj = JSON.parse(savedTeacherStr);
+        isDemo = !!tObj.isDemo;
+      } catch (_) {}
+    }
+
     const saved = localStorage.getItem('learnlens_students');
-    return saved ? JSON.parse(saved) : STUDENTS_DATA;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // If in demo mode and previously had >2 students, clamp to the 2 demo students
+          if (isDemo && parsed.length > 2) {
+            return TWO_DEMO_STUDENTS;
+          }
+          return parsed;
+        }
+      } catch (_) {}
+    }
+
+    // In demo mode: exactly 2 demo students. In real mode: clean empty array!
+    return isDemo ? TWO_DEMO_STUDENTS : [];
   });
 
   // 8. Selected student for inspection modal
@@ -160,6 +186,7 @@ export function AppProvider({ children }) {
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false);
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [isCreateAssessmentModalOpen, setIsCreateAssessmentModalOpen] = useState(false);
+  const [isImportDocModalOpen, setIsImportDocModalOpen] = useState(false);
   const [assessmentTargetStudent, setAssessmentTargetStudent] = useState(null);
 
   // 11. Supabase configuration status
@@ -274,13 +301,116 @@ export function AppProvider({ children }) {
   // ACTIONS: TEACHER & SCHOOL MANAGEMENT
   // -------------------------------------------------------------
   const updateTeacherProfile = async (newProfile) => {
-    const updated = { ...teacher, ...newProfile, isDemo: false };
+    const updated = { 
+      ...teacher, 
+      ...newProfile, 
+      isDemo: false, 
+      isAuthenticated: true 
+    };
     setTeacher(updated);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(updated));
     await syncTeacherToCloud(updated);
+    setCurrentView('dashboard');
+  };
+
+  const loginTeacher = async ({ email, name, password }) => {
+    const updated = {
+      ...teacher,
+      name: name || (email ? email.split('@')[0] : 'Educator'),
+      email: email || teacher.email,
+      isDemo: false,
+      isAuthenticated: true
+    };
+    setTeacher(updated);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(updated));
+
+    // Load saved students for this real educator, or [] (NO pre student data!)
+    const savedKey = `learnlens_real_students_${updated.email || 'custom'}`;
+    const savedReal = localStorage.getItem(savedKey);
+    let realStudents = [];
+    if (savedReal) {
+      try {
+        const p = JSON.parse(savedReal);
+        if (Array.isArray(p)) realStudents = p;
+      } catch (_) {}
+    }
+    setStudents(realStudents);
+    localStorage.setItem('learnlens_students', JSON.stringify(realStudents));
+
+    setCurrentView('dashboard');
+    setIsAuthModalOpen(false);
+    return updated;
+  };
+
+  const registerTeacher = async (details) => {
+    const newTeacher = {
+      id: `tch-${Date.now()}`,
+      name: details.name,
+      nameHi: details.nameHi || details.name,
+      school: details.school,
+      schoolHi: details.schoolHi || details.school,
+      district: details.district,
+      state: details.state,
+      email: details.email,
+      phone: details.phone,
+      grade: details.grade || 'Grade 3',
+      isDemo: false,
+      isAuthenticated: true
+    };
+    setTeacher(newTeacher);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(newTeacher));
+
+    // Fresh empty student roster for newly registered teacher!
+    setStudents([]);
+    localStorage.setItem('learnlens_students', JSON.stringify([]));
+
+    setCurrentView('dashboard');
+    setIsAuthModalOpen(false);
+    await syncTeacherToCloud(newTeacher);
+    return newTeacher;
   };
 
   const setDemoTeacher = () => {
-    setTeacher(DEFAULT_TEACHER);
+    const demoTeacher = {
+      ...DEFAULT_TEACHER,
+      name: 'Sunita Devi',
+      nameHi: 'सुनीता देवी',
+      isDemo: true,
+      isAuthenticated: true
+    };
+    setTeacher(demoTeacher);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(demoTeacher));
+
+    // Demo mode has exactly the 2 demo students!
+    setStudents(TWO_DEMO_STUDENTS);
+    localStorage.setItem('learnlens_students', JSON.stringify(TWO_DEMO_STUDENTS));
+
+    setCurrentView('dashboard');
+    setIsAuthModalOpen(false);
+  };
+
+  const logoutTeacher = () => {
+    const unauth = {
+      ...DEFAULT_TEACHER,
+      isAuthenticated: false,
+      isDemo: false
+    };
+    setTeacher(unauth);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(unauth));
+    setStudents([]);
+    localStorage.setItem('learnlens_students', JSON.stringify([]));
+    setSelectedStudent(null);
+    setCurrentView('intro');
+  };
+
+  const resetToDemoData = () => {
+    setTeacher({
+      ...DEFAULT_TEACHER,
+      isDemo: true,
+      isAuthenticated: true
+    });
+    setStudents(TWO_DEMO_STUDENTS);
+    localStorage.setItem('learnlens_students', JSON.stringify(TWO_DEMO_STUDENTS));
   };
 
   // -------------------------------------------------------------
@@ -379,9 +509,51 @@ export function AppProvider({ children }) {
     if (selectedStudent?.id === studentId) setSelectedStudent(null);
   };
 
-  const resetToDemoData = () => {
-    setStudents(STUDENTS_DATA);
-    setTeacher(DEFAULT_TEACHER);
+  const addStudentsBatch = async (newStudentsList) => {
+    const startingRoll = students.length + 1;
+    const prepared = newStudentsList.map((s, idx) => ({
+      id: Date.now() + idx,
+      rollNo: s.rollNo ? Number(s.rollNo) : startingRoll + idx,
+      name: s.name,
+      nameHi: s.nameHi || s.name,
+      age: Number(s.age) || 8,
+      gender: s.gender || 'other',
+      status: s.status || 'unassessed',
+      currentLevel: s.level || 'Grade 1.2',
+      currentLevelHi: s.levelHi || 'कक्षा 1.2',
+      tarlGroup: 'Group B — Developing',
+      tarlGroupHi: 'समूह ख — विकासशील',
+      attendance: s.attendance ? (String(s.attendance).includes('%') ? s.attendance : `${s.attendance}%`) : '95%',
+      primaryGap: s.primaryGap || 'Pending baseline assessment',
+      primaryGapHi: s.primaryGapHi || 'प्रारंभिक जांच प्रतीक्षित',
+      skills: {
+        numberSense: 50,
+        placeValue: 30,
+        addition: 40,
+        subtractionBorrowing: 20,
+        letterSound: 60,
+        reading: 35
+      },
+      growthHistory: [
+        { date: "Enrollment", score: 35, label: "Roster Enrolled" }
+      ],
+      recommendedPlan: [
+        { day: "Day 1", task: "Administer ASER & CBSE FLN Diagnostic Screener", done: false },
+        { day: "Day 2", task: "Assign to initial TaRL group based on error analysis", done: false },
+        { day: "Day 3", task: "Begin daily 15-minute concrete manipulative station", done: false },
+        { day: "Day 4", task: "Peer learning check", done: false },
+        { day: "Day 5", task: "Formative exit check", done: false }
+      ]
+    }));
+
+    const updated = [...students, ...prepared];
+    setStudents(updated);
+    localStorage.setItem('learnlens_students', JSON.stringify(updated));
+
+    if (teacher && !teacher.isDemo && teacher.email) {
+      localStorage.setItem(`learnlens_real_students_${teacher.email}`, JSON.stringify(updated));
+    }
+    return updated;
   };
 
   // -------------------------------------------------------------
@@ -592,7 +764,10 @@ export function AppProvider({ children }) {
         setThemeIntensity,
         teacher,
         updateTeacherProfile,
+        loginTeacher,
+        registerTeacher,
         setDemoTeacher,
+        logoutTeacher,
         classes,
         activeClass,
         activeClassId,
@@ -605,6 +780,7 @@ export function AppProvider({ children }) {
         createAssessment,
         students,
         addStudent,
+        addStudentsBatch,
         deleteStudent,
         resetToDemoData,
         selectedStudent,
@@ -627,6 +803,8 @@ export function AppProvider({ children }) {
         setIsAssessmentModalOpen,
         isCreateAssessmentModalOpen,
         setIsCreateAssessmentModalOpen,
+        isImportDocModalOpen,
+        setIsImportDocModalOpen,
         assessmentTargetStudent,
         setAssessmentTargetStudent
       }}
