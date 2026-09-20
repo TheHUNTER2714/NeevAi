@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { NeevLogo } from "./ElisaLogo";
+import { KineticDribbbleLogo } from "./KineticDribbbleLogo";
 
 export interface ScrollLockedVideoHeroProps {
   onEnterOverview?: () => void;
@@ -204,7 +205,7 @@ export function ScrollLockedVideoHero({
       <main className="relative z-20 flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-center text-center">
         <AnimatePresence mode="wait">
           {/* ------------------------------------------------------------------- */}
-          {/* STAGE 1: THE OCTOPII LOGO REVELATION & BRAND IDENTITY                */}
+          {/* STAGE 1: KINETIC LOGO REVELATION & BRAND IDENTITY                    */}
           {/* ------------------------------------------------------------------- */}
           {stage === 1 && (
             <motion.div
@@ -213,15 +214,14 @@ export function ScrollLockedVideoHero({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: -20 }}
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center justify-center p-2"
+              className="flex flex-col items-center justify-center p-2 w-full"
             >
-              {/* Master Octopii Kinetic Vector Logo */}
-              <div className="mb-2">
-                <NeevLogo 
-                  variant="hero" 
-                  showTagline={true} 
+              {/* Master Kinetic Dribbble Vector Logo */}
+              <div className="mb-2 w-full max-w-xl flex justify-center">
+                <KineticDribbbleLogo 
                   lang={lang} 
-                  className="transform scale-90 sm:scale-100"
+                  showControls={true} 
+                  className="w-full"
                 />
               </div>
 
@@ -399,7 +399,7 @@ export function ScrollLockedVideoHero({
                 : 'bg-slate-950/60 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            1. {isHi ? "ऑक्टोपी लोगो" : "Octopii Identity"}
+            1. {isHi ? "नींव लोगो" : "Neev Identity"}
           </button>
 
           <button 

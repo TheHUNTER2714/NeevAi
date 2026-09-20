@@ -24,6 +24,11 @@ import { TRANSLATIONS } from '../data/translations';
 
 export function PriorityAction({ lang, onOpenMisconception }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const { 
+    students, 
+    setIsAddStudentModalOpen, 
+    setIsAssessmentModalOpen 
+  } = useApp();
 
   // Active classroom runner mode
   const [isActiveSession, setIsActiveSession] = useState(false);
@@ -31,17 +36,27 @@ export function PriorityAction({ lang, onOpenMisconception }) {
   const [timerRunning, setTimerRunning] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  // 8 target students struggling with Subtraction with Borrowing
-  const [studentsChecklist, setStudentsChecklist] = useState([
-    { id: 's1', name: 'Rahul Sharma (रोहित शर्मा)', checked: false, scoreBefore: 35 },
-    { id: 's2', name: 'Neha Gupta (नेहा गुप्ता)', checked: false, scoreBefore: 32 },
-    { id: 's3', name: 'Deepak Verma (दीपक वर्मा)', checked: false, scoreBefore: 30 },
-    { id: 's4', name: 'Kavita Soni (कविता सोनी)', checked: false, scoreBefore: 38 },
-    { id: 's5', name: 'Amit Rawat (अमित रावत)', checked: false, scoreBefore: 35 },
-    { id: 's6', name: 'Pooja Devi (पूजा देवी)', checked: false, scoreBefore: 28 },
-    { id: 's7', name: 'Manoj Tiwari (मनोज तिवारी)', checked: false, scoreBefore: 36 },
-    { id: 's8', name: 'Sonam Bano (सोनम बानो)', checked: false, scoreBefore: 34 },
-  ]);
+  // Dynamic intervention students from actual roster
+  const interventionStudents = (students || []).filter(
+    (s) => s.status === 'intervention' || s.status === 'attention' || (s.skills && s.skills.subtractionBorrowing < 50)
+  );
+
+  const [studentsChecklist, setStudentsChecklist] = useState([]);
+
+  useEffect(() => {
+    if (interventionStudents.length > 0) {
+      setStudentsChecklist(
+        interventionStudents.map((s) => ({
+          id: s.id,
+          name: lang === 'hi' ? (s.nameHi || s.name) : s.name,
+          checked: false,
+          scoreBefore: s.skills?.subtractionBorrowing || 35
+        }))
+      );
+    } else {
+      setStudentsChecklist([]);
+    }
+  }, [students, lang]);
 
   // Timer countdown
   useEffect(() => {
@@ -64,7 +79,7 @@ export function PriorityAction({ lang, onOpenMisconception }) {
     setStudentsChecklist(updated);
 
     // If all students checked, trigger confetti
-    if (updated.every((s) => s.checked)) {
+    if (updated.length > 0 && updated.every((s) => s.checked)) {
       confetti({
         particleCount: 80,
         spread: 80,
@@ -93,6 +108,97 @@ export function PriorityAction({ lang, onOpenMisconception }) {
 
   const masteredCount = studentsChecklist.filter((s) => s.checked).length;
 
+  // 1. Zero Pre-Data Clean State: No students enrolled in classroom
+  if (!students || students.length === 0) {
+    return (
+      <div className="relative w-full rounded-3xl overflow-hidden border border-cyan-500/30 bg-gradient-to-r from-slate-950/80 via-slate-900/90 to-cyan-950/40 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+        <BorderBeam size={250} duration={6} colorFrom="#06b6d4" colorTo="#3b82f6" borderWidth={1.5} />
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-lg">
+              <Sparkles className="w-5 h-5 text-cyan-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <PulsingBadge variant="cyan">
+                  {lang === 'hi' ? 'दैनिक हस्तक्षेप केंद्र' : 'Daily Intervention Hub'}
+                </PulsingBadge>
+                <span className="text-xs text-slate-400 font-mono">
+                  {lang === 'hi' ? 'कक्षा तैयारी' : 'Ready for Classroom'}
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold font-display text-white mt-1">
+                {lang === 'hi' ? 'कक्षा में अभी कोई छात्र दर्ज नहीं है' : 'Classroom Roster Ready for Enrollment'}
+              </h3>
+              <p className="text-xs text-slate-300 mt-1 max-w-xl font-body leading-relaxed">
+                {lang === 'hi' 
+                  ? 'छात्रों को जोड़ें अथवा बुनियादी नैदानिक जांच दर्ज करें। नींव AI स्वतः सीखने की कमियों को पहचान कर लक्षित 15-मिनट शिक्षण स्टेशन तैयार करेगा।' 
+                  : 'Enroll your students or record an initial diagnostic screener. NeevAI will automatically isolate cognitive gaps and generate your priority 15-minute station.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <ShimmerButton
+              onClick={() => setIsAddStudentModalOpen(true)}
+              shimmerColor="#06b6d4"
+              className="px-4 py-2 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20"
+            >
+              <span>{lang === 'hi' ? '+ नया छात्र जोड़ें' : '+ Add Student'}</span>
+            </ShimmerButton>
+            <button
+              onClick={() => setIsAssessmentModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xs font-bold transition-colors shadow-sm"
+            >
+              <span>{lang === 'hi' ? 'जांच दर्ज करें' : 'Enter Screener'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. All Students On Track State
+  if (interventionStudents.length === 0) {
+    return (
+      <div className="relative w-full rounded-3xl overflow-hidden border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-slate-950/90 to-slate-900/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+        <BorderBeam size={250} duration={6} colorFrom="#10b981" colorTo="#06b6d4" borderWidth={1.5} />
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg">
+              <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <PulsingBadge variant="emerald">
+                  {lang === 'hi' ? 'उत्कृष्ट प्रदर्शन' : 'Mastery Achieved'}
+                </PulsingBadge>
+                <span className="text-xs text-slate-400 font-mono">
+                  {lang === 'hi' ? 'सभी छात्र स्तरानुकूल' : 'All Assessed Students on Track'}
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold font-display text-white mt-1">
+                {lang === 'hi' ? 'वर्तमान में किसी भी छात्र को गंभीर उपचारात्मक सहारे की आवश्यकता नहीं है' : 'No Critical Misconceptions Detected in Class'}
+              </h3>
+              <p className="text-xs text-slate-300 mt-1 max-w-xl font-body leading-relaxed">
+                {lang === 'hi'
+                  ? 'सभी नामांकित बच्चे बुनियादी घटाव व पठन प्रवाह में लक्ष्य स्तर पर हैं। आगे की प्रगति के लिए समूह गतिविधियां जारी रखें।'
+                  : 'All enrolled students have demonstrated foundational competency in subtraction and reading fluency. Proceed with accelerated TaRL group stations.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsAssessmentModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-colors shrink-0 shadow-sm"
+          >
+            <span>{lang === 'hi' ? 'नई जांच दर्ज करें' : 'Conduct Next Screener'}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Priority Intervention Active with Real Enrolled Students
   return (
     <div className="relative w-full rounded-3xl overflow-hidden border border-rose-500/30 bg-gradient-to-r from-rose-950/50 via-slate-950/90 to-amber-950/40 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
       
@@ -115,7 +221,9 @@ export function PriorityAction({ lang, onOpenMisconception }) {
               </span>
             </div>
             <h3 className="text-xl sm:text-2xl font-bold font-display text-white mt-1.5 tracking-tight">
-              {lang === 'hi' ? '8 बच्चे घटाव में उधार लेने में अटक रहे हैं' : '8 Students are Struggling with Subtraction Borrowing'}
+              {lang === 'hi' 
+                ? `${interventionStudents.length} बच्चे घटाव में उधार लेने में अटक रहे हैं` 
+                : `${interventionStudents.length} Students are Struggling with Subtraction Borrowing`}
             </h3>
           </div>
         </div>
@@ -195,7 +303,7 @@ export function PriorityAction({ lang, onOpenMisconception }) {
                 {lang === 'hi' ? 'लक्षित विद्यार्थी' : 'Target Small Group'}
               </span>
               <span className="text-xs font-bold text-white">
-                8 {lang === 'hi' ? 'छात्र (राहुल, नेहा, दीपक आदि)' : 'Students (Rahul, Neha, Deepak, etc.)'}
+                {interventionStudents.length} {lang === 'hi' ? 'छात्र' : 'Students'} ({interventionStudents.slice(0, 2).map(s => s.name.split(' ')[0]).join(', ')}{interventionStudents.length > 2 ? '...' : ''})
               </span>
             </div>
             <button

@@ -119,19 +119,40 @@ export function LearningCycleView() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {learningCycles.map((cycle) => {
-            const isCompleted = cycle.status === 'gap_closed';
-            return (
-              <SpotlightCard
-                key={cycle.id}
-                spotlightColor={isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}
-                className={`p-6 rounded-3xl border transition-all relative overflow-hidden flex flex-col justify-between ${
-                  isCompleted 
-                    ? 'bg-slate-950/70 border-emerald-500/40 shadow-xl shadow-emerald-950/20' 
-                    : 'bg-slate-950/70 border-amber-500/40 shadow-xl shadow-amber-950/20'
-                }`}
-              >
+        {learningCycles.length === 0 ? (
+          <div className="py-14 px-6 text-center flex flex-col items-center justify-center bg-slate-950/40 rounded-3xl border border-dashed border-slate-800">
+            <div className="w-14 h-14 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-3 shadow-lg">
+              <RotateCcw className="w-7 h-7" />
+            </div>
+            <h4 className="text-base font-bold text-white font-display mb-1">
+              {lang === 'hi' ? 'अभी कोई सुधार चक्र सक्रिय नहीं है' : 'No Improvement Cycles Tracked Yet'}
+            </h4>
+            <p className="text-xs text-slate-400 max-w-md mx-auto mb-5 font-body leading-relaxed">
+              {lang === 'hi' 
+                ? 'कक्षा के किसी भी छात्र के लिए नैदानिक जांच (अंक तुलना, घटाव या पठन) दर्ज करें। भ्रांति की पहचान होने पर नींव AI स्वतः 6-चरणीय सुधार चक्र आरंभ करेगा।' 
+                : 'Conduct an initial assessment for any enrolled student. Detected misconceptions will automatically initiate their personalized 6-stage transformation cycle.'}
+            </p>
+            <button
+              onClick={() => setCurrentView('assessment')}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-sky-400 transition-all cursor-pointer"
+            >
+              <span>{lang === 'hi' ? 'नैदानिक जांच शुरू करें' : 'Start Diagnostic Assessment'}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {learningCycles.map((cycle) => {
+              const isCompleted = cycle.status === 'gap_closed';
+              return (
+                <SpotlightCard
+                  key={cycle.id}
+                  spotlightColor={isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}
+                  className={`p-6 rounded-3xl border transition-all relative overflow-hidden flex flex-col justify-between ${
+                    isCompleted 
+                      ? 'bg-slate-950/70 border-emerald-500/40 shadow-xl shadow-emerald-950/20' 
+                      : 'bg-slate-950/70 border-amber-500/40 shadow-xl shadow-amber-950/20'
+                  }`}
+                >
                 <div>
                   {/* Top Bar: Student Name & Status */}
                   <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-800/80">
@@ -237,7 +258,8 @@ export function LearningCycleView() {
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
 
       {/* Modal to Record Reassessment for an in-progress cycle */}
       {reassessModalCycle && (

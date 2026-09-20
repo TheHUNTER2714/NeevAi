@@ -50,13 +50,13 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
   }, [assessmentTargetStudent]);
 
   const currentStudent = (students && students.find((s) => s.id === Number(activeStudentId))) || (students && students[0]) || {
-    id: 1,
+    id: 999,
     rollNo: 1,
-    name: 'Priya Sharma',
-    nameHi: 'प्रिया शर्मा',
-    currentLevel: 'Grade 1.2',
-    currentLevelHi: 'कक्षा 1.2',
-    status: 'intervention'
+    name: lang === 'hi' ? 'परीक्षार्थी छात्र' : 'Student Candidate',
+    nameHi: 'परीक्षार्थी छात्र',
+    currentLevel: 'Grade 2.0',
+    currentLevelHi: 'कक्षा 2.0',
+    status: 'unassessed'
   };
   
   // Dynamic Assessment Question Data

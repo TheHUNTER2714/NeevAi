@@ -43,41 +43,22 @@ export function NeevLogo({
   if (variant === 'icon') {
     return (
       <div className={`relative flex items-center justify-center ${className}`}>
-        <div className="absolute inset-0 bg-cyan-400/30 rounded-full blur-[3px] pointer-events-none animate-pulse" />
-        <svg viewBox="0 0 60 60" className="w-full h-full relative z-10 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.9)]">
+        <div className="absolute inset-0 bg-violet-500/30 rounded-full blur-[3px] pointer-events-none animate-pulse" />
+        <svg viewBox="0 0 60 60" className="w-full h-full relative z-10 filter drop-shadow-[0_0_8px_rgba(192,132,252,0.9)]">
           <defs>
-            <linearGradient id="octoIconGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00f5ff" />
-              <stop offset="50%" stopColor="#818cf8" />
-              <stop offset="100%" stopColor="#ec4899" />
-            </linearGradient>
-            <linearGradient id="octoIconGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="50%" stopColor="#ec4899" />
-              <stop offset="100%" stopColor="#00f5ff" />
+            <linearGradient id="dribbbleIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="100%" stopColor="#c084fc" />
             </linearGradient>
           </defs>
-          {/* Subtle Outer Guide Ring */}
-          <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="3 4" />
-          
-          {/* 8 Compact Radial Tentacles scaled to 60x60 */}
-          <g transform="translate(30, 30) scale(0.42)">
-            {OCTOPII_ANGLES.map((angle, idx) => (
-              <path
-                key={angle}
-                d={TENTACLE_PATH}
-                fill="none"
-                stroke={idx % 2 === 0 ? "url(#octoIconGrad1)" : "url(#octoIconGrad2)"}
-                strokeWidth="4.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                transform={`rotate(${angle})`}
-              />
-            ))}
-            {/* Center Core Nucleus */}
-            <circle cx="0" cy="0" r="7" fill="#00f5ff" className="drop-shadow-[0_0_6px_#00f5ff]" />
-            <circle cx="0" cy="0" r="3" fill="#ffffff" />
-          </g>
+          {/* Top-left accent petal */}
+          <path d="M 12,12 L 24,12 C 24,18 18,24 12,24 Z" fill="#c084fc" opacity="0.9" />
+          {/* 4-Point Geometric Sparkle Mark */}
+          <path
+            d="M 30,8 C 30,20 20,30 8,30 C 20,30 30,40 30,52 C 30,40 40,30 52,30 C 40,30 30,20 30,8 Z"
+            fill="url(#dribbbleIconGrad)"
+          />
+          <circle cx="30" cy="30" r="2" fill="#2e0854" />
         </svg>
       </div>
     );
@@ -97,19 +78,17 @@ export function NeevLogo({
         title={lang === 'hi' ? 'नींव AI — एनिमेशन फिर से चलाएं' : 'NeevAI — Click to replay animation'}
       >
         <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
-          <div className="absolute inset-0 bg-cyan-500/25 rounded-full blur-md group-hover:bg-cyan-400/40 group-hover:scale-110 transition-all duration-300 pointer-events-none" />
+          <div className="absolute inset-0 bg-violet-600/25 rounded-2xl blur-md group-hover:bg-violet-500/40 group-hover:scale-110 transition-all duration-300 pointer-events-none" />
 
-          <svg viewBox="0 0 60 60" className="w-11 h-11 relative z-10 filter drop-shadow-[0_0_12px_rgba(6,182,212,0.85)]">
+          <svg viewBox="0 0 60 60" className="w-11 h-11 relative z-10 filter drop-shadow-[0_0_12px_rgba(192,132,252,0.85)]">
             <defs>
-              <linearGradient id="octoNavGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#00f5ff" />
-                <stop offset="50%" stopColor="#818cf8" />
-                <stop offset="100%" stopColor="#ec4899" />
+              <linearGradient id="dribbbleNavGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="100%" stopColor="#f8fafc" />
               </linearGradient>
-              <linearGradient id="octoNavGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#f59e0b" />
-                <stop offset="50%" stopColor="#ec4899" />
-                <stop offset="100%" stopColor="#00f5ff" />
+              <linearGradient id="dribbbleLilacNav" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#c084fc" />
+                <stop offset="100%" stopColor="#a855f7" />
               </linearGradient>
             </defs>
 
@@ -119,56 +98,39 @@ export function NeevLogo({
               cy="30"
               r="26"
               fill="none"
-              stroke="rgba(255,255,255,0.22)"
-              strokeWidth="1.2"
-              strokeDasharray="3 5"
+              stroke="rgba(255,255,255,0.2)"
+              strokeWidth="1"
+              strokeDasharray="2 4"
               animate={{ rotate: 360 }}
               transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
             />
 
-            {/* 8 Radial Octopii Tentacles with Rotation & Breathing */}
-            <motion.g 
-              transform="translate(30, 30) scale(0.42)"
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-            >
-              {OCTOPII_ANGLES.map((angle, idx) => (
-                <motion.path
-                  key={angle}
-                  d={TENTACLE_PATH}
-                  fill="none"
-                  stroke={idx % 2 === 0 ? "url(#octoNavGrad1)" : "url(#octoNavGrad2)"}
-                  strokeWidth="4.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  transform={`rotate(${angle})`}
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.2, delay: idx * 0.08, ease: "easeOut" }}
-                />
-              ))}
-              
-              {/* Luminous Core Orb */}
-              <motion.circle 
-                cx="0" 
-                cy="0" 
-                r="7" 
-                fill="#00f5ff" 
-                animate={{ scale: [1, 1.2, 1] }} 
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <circle cx="0" cy="0" r="3" fill="#ffffff" />
-            </motion.g>
+            {/* Top-left Lilac Accent Quadrant */}
+            <motion.path
+              d="M 12,12 L 24,12 C 24,18 18,24 12,24 Z"
+              fill="url(#dribbbleLilacNav)"
+              animate={{ scale: [0.95, 1.05, 0.95] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* 4-point Sparkle Vector Mark */}
+            <motion.path
+              d="M 30,8 C 30,20 20,30 8,30 C 20,30 30,40 30,52 C 30,40 40,30 52,30 C 40,30 30,20 30,8 Z"
+              fill="url(#dribbbleNavGrad)"
+              animate={{ scale: [1, 1.06, 1], rotate: [0, 4, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <circle cx="30" cy="30" r="2.5" fill="#2e0854" />
           </svg>
         </div>
 
-        {/* Brand Name Typography with Custom Octopii Stylized Letter Terminals */}
+        {/* Brand Name Typography with Modern Clean Letter Terminals */}
         <div className="flex flex-col text-left">
           <div className="flex items-center gap-1.5">
-            <span className="font-display font-black text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors">
-              Neev
+            <span className="font-display font-black text-xl tracking-tight text-white group-hover:text-violet-300 transition-colors uppercase">
+              {lang === 'hi' ? 'नींव' : 'Neev'}
             </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-gradient-to-r from-cyan-500/30 via-indigo-500/30 to-amber-500/30 text-cyan-300 border border-cyan-500/40 font-bold shadow-sm">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-gradient-to-r from-violet-500/30 via-cyan-500/30 to-fuchsia-500/30 text-violet-200 border border-violet-400/40 font-bold shadow-sm">
               AI
             </span>
           </div>

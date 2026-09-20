@@ -170,14 +170,23 @@ export function TeacherDashboard({ onSelectStudent, onOpenMisconception, onOpenA
                 <span>{supabaseConfig.isConfigured ? 'Cloud Synced' : 'Offline / Local-First'}</span>
               </button>
 
+              {/* Demo Mode Badge */}
+              {teacher?.isDemo && (
+                <span className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold">
+                  <span>{lang === 'hi' ? 'डेमो मोड सक्रिय' : 'Demo Account Active'}</span>
+                </span>
+              )}
+
               {/* Logout Button */}
               <button
                 onClick={logoutTeacher}
-                className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1 rounded-full bg-rose-950/50 border border-rose-500/40 text-rose-300 hover:bg-rose-900/70 hover:text-white transition-all shadow-sm"
-                title="Logout of Teacher Cockpit"
+                className="flex items-center gap-1.5 text-[11px] font-mono px-3.5 py-1 rounded-full bg-rose-950/70 border border-rose-500/50 text-rose-300 hover:bg-rose-900 hover:text-white transition-all shadow-md cursor-pointer font-bold"
+                title={teacher?.isDemo 
+                  ? (lang === 'hi' ? 'डेमो अकाउंट से लॉगआउट करें' : 'Log out from Demo Account')
+                  : (lang === 'hi' ? 'लॉगआउट' : 'Logout')}
               >
-                <LogOut className="w-3 h-3 text-rose-400" />
-                <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                <span>{teacher?.isDemo ? (lang === 'hi' ? 'डेमो लॉगआउट' : 'Log Out Demo') : (lang === 'hi' ? 'लॉगआउट' : 'Logout')}</span>
               </button>
             </div>
 
@@ -186,20 +195,30 @@ export function TeacherDashboard({ onSelectStudent, onOpenMisconception, onOpenA
               <h1 className="text-2xl sm:text-4xl font-extrabold font-display tracking-tight text-white flex items-center gap-2">
                 <span className="text-2xl sm:text-3xl filter drop-shadow-md">{greetingData.icon}</span>
                 <span className={`bg-gradient-to-r ${greetingData.gradient} bg-clip-text text-transparent`}>
-                  {greetingData.prefix}, {teacher.name}
+                  {greetingData.prefix}, {teacher?.isAuthenticated ? teacher.name : (lang === 'hi' ? 'शिक्षक' : 'Educator')}
                 </span>
               </h1>
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="text-xs text-amber-400 hover:text-amber-300 hover:underline font-mono"
-                title="Edit Educator Profile"
-              >
-                (Edit)
-              </button>
+              {teacher?.isAuthenticated ? (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="text-xs text-amber-400 hover:text-amber-300 hover:underline font-mono"
+                  title="Edit Educator Profile"
+                >
+                  (Edit)
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 underline font-mono"
+                  title="Sign In / Register"
+                >
+                  (Sign In)
+                </button>
+              )}
             </div>
 
             <p className="text-slate-300 text-sm mt-1 font-body">
-              {activeClass?.name} | {teacher.school}, {teacher.district} ({teacher.state})
+              {activeClass?.name} | {teacher?.school ? `${teacher.school}, ${teacher.district} (${teacher.state})` : (lang === 'hi' ? 'प्राथमिक विद्यालय • नई दिल्ली' : 'Primary School • FLN Cockpit')}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 mt-3">

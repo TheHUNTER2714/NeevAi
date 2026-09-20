@@ -129,68 +129,6 @@ export const TWO_DEMO_STUDENTS = [
   }
 ];
 
-export const getDynamicTarlGroups = (studentsList = []) => {
-  const groupA = studentsList.filter(s => s.status === 'unassessed' || s.currentLevel?.includes('1.0') || s.currentLevel?.includes('1.1'));
-  const groupB = studentsList.filter(s => s.status === 'intervention' || s.tarlGroup?.includes('Group B') || s.currentLevel?.includes('1.'));
-  const groupC = studentsList.filter(s => s.status === 'attention' || s.tarlGroup?.includes('Group C') || s.currentLevel?.includes('2.'));
-  const groupD = studentsList.filter(s => s.status === 'on_track' || s.status === 'excelling' || s.tarlGroup?.includes('Group D') || s.currentLevel?.includes('3.'));
-
-  return [
-    {
-      id: "group-a",
-      name: "Group A — Foundation",
-      nameHi: "समूह क — बुनियादी आधार",
-      count: groupA.length,
-      color: "rose",
-      focusSkill: "Letter Recognition & 1-Digit Numbers",
-      focusSkillHi: "अक्षर पहचान व 1-अंकीय संख्या ज्ञान",
-      targetGoal: "Recognize all 52 Hindi varnamala & count up to 20 with objects",
-      targetGoalHi: "सभी 52 वर्णों की पहचान व 20 तक वस्तुओं से गिनती",
-      students: groupA.map(s => s.name),
-      recommendedActivityId: "act-foundation-1"
-    },
-    {
-      id: "group-b",
-      name: "Group B — Developing (Borrowing & Place Value)",
-      nameHi: "समूह ख — विकासशील (घटाव व स्थानीय मान)",
-      count: groupB.length,
-      color: "amber",
-      focusSkill: "Subtraction with Regrouping (52 - 27)",
-      focusSkillHi: "उधार वाला घटाव एवं दहाई स्थानीय मान",
-      targetGoal: "Decompose tens into ones using manipulatives before abstract sums",
-      targetGoalHi: "मूर्तिक वस्तुओं द्वारा दहाई से इकाई में पुनर्समूहन की समझ",
-      students: groupB.map(s => s.name),
-      recommendedActivityId: "act-subtraction-borrow"
-    },
-    {
-      id: "group-c",
-      name: "Group C — Reading Fluency",
-      nameHi: "समूह ग — धाराप्रवाह पठन",
-      count: groupC.length,
-      color: "cyan",
-      focusSkill: "Word Decoding & Sentence Fluency (35+ WCPM)",
-      focusSkillHi: "शब्द पठन एवं 35+ शब्द/मिनट की धाराप्रवाह गति",
-      targetGoal: "Transition from spelling individual akshars to sight word automaticity",
-      targetGoalHi: "अक्षरों को अलग-अलग जोड़कर पढ़ने से पूरे शब्द को एक बार में पढ़ने की ओर बढ़ना",
-      students: groupC.map(s => s.name),
-      recommendedActivityId: "act-reading-fluency"
-    },
-    {
-      id: "group-d",
-      name: "Group D — On Track & Excelling",
-      nameHi: "समूह घ — स्तरानुकूल एवं उन्नत",
-      count: groupD.length,
-      color: "emerald",
-      focusSkill: "Grade-Level Mastery & Peer Mentoring",
-      focusSkillHi: "कक्षा स्तर प्रवीणता एवं सहपाठी शिक्षण",
-      targetGoal: "Solve multi-step reasoning story sums & independent chapter reading",
-      targetGoalHi: "बहु-चरणीय इबारती सवाल हल करना व स्वतंत्र कहानी पठन",
-      students: groupD.map(s => s.name),
-      recommendedActivityId: "act-accelerated"
-    }
-  ];
-};
-
 export const STUDENTS_DATA = [
   {
     id: "stu-1",
@@ -661,3 +599,138 @@ export const TARL_GROUPS = [
     recommendedActivityId: "act-accelerated"
   }
 ];
+
+export function getDynamicTarlGroups(studentsList = []) {
+  if (!studentsList || studentsList.length === 0) {
+    return [
+      {
+        id: "group-a",
+        name: "Group A — Foundation",
+        nameHi: "समूह क — बुनियादी आधार",
+        count: 0,
+        color: "rose",
+        focusSkill: "Letter Recognition & 1-Digit Numbers",
+        focusSkillHi: "अक्षर पहचान व 1-अंकीय संख्या ज्ञान",
+        targetGoal: "Recognize all 52 Hindi varnamala & count up to 20 with objects",
+        targetGoalHi: "सभी 52 वर्णों की पहचान व 20 तक वस्तुओं से गिनती",
+        students: [],
+        recommendedActivityId: "act-foundation-1"
+      },
+      {
+        id: "group-b",
+        name: "Group B — Developing (Borrowing & Place Value)",
+        nameHi: "समूह ख — विकासशील (घटाव व स्थानीय मान)",
+        count: 0,
+        color: "amber",
+        focusSkill: "Subtraction with Regrouping (52 - 27)",
+        focusSkillHi: "उधार वाला घटाव एवं दहाई स्थानीय मान",
+        targetGoal: "Decompose tens into ones using manipulatives before abstract sums",
+        targetGoalHi: "मूर्तिक वस्तुओं द्वारा दहाई से इकाई में पुनर्समूहन की समझ",
+        students: [],
+        recommendedActivityId: "act-subtraction-borrow"
+      },
+      {
+        id: "group-c",
+        name: "Group C — Reading Fluency",
+        nameHi: "समूह ग — धाराप्रवाह पठन",
+        count: 0,
+        color: "cyan",
+        focusSkill: "Word Decoding & Sentence Fluency (35+ WCPM)",
+        focusSkillHi: "शब्द पठन एवं 35+ शब्द/मिनट की धाराप्रवाह गति",
+        targetGoal: "Transition from spelling individual akshars to sight word automaticity",
+        targetGoalHi: "अक्षरों को अलग-अलग जोड़कर पढ़ने से पूरे शब्द को एक बार में पढ़ने की ओर बढ़ना",
+        students: [],
+        recommendedActivityId: "act-reading-fluency"
+      },
+      {
+        id: "group-d",
+        name: "Group D — On Track & Excelling",
+        nameHi: "समूह घ — स्तरानुकूल एवं उन्नत",
+        count: 0,
+        color: "emerald",
+        focusSkill: "Grade-Level Mastery & Peer Mentoring",
+        focusSkillHi: "कक्षा स्तर प्रवीणता एवं सहपाठी शिक्षण",
+        targetGoal: "Solve multi-step reasoning story sums & independent chapter reading",
+        targetGoalHi: "बहु-चरणीय इबारती सवाल हल करना व स्वतंत्र कहानी पठन",
+        students: [],
+        recommendedActivityId: "act-accelerated"
+      }
+    ];
+  }
+
+  const groupAStudents = [];
+  const groupBStudents = [];
+  const groupCStudents = [];
+  const groupDStudents = [];
+
+  studentsList.forEach((s) => {
+    const name = s.name || 'Student';
+    const status = s.status || 'unassessed';
+    const tGroup = (s.tarlGroup || '').toLowerCase();
+
+    if (status === 'intervention' && (tGroup.includes('a') || (s.skills && s.skills.numberSense < 50))) {
+      groupAStudents.push(name);
+    } else if (status === 'intervention' || tGroup.includes('b') || (s.primaryGap && s.primaryGap.toLowerCase().includes('subtract'))) {
+      groupBStudents.push(name);
+    } else if (status === 'attention' || tGroup.includes('c') || (s.skills && s.skills.reading < 50)) {
+      groupCStudents.push(name);
+    } else {
+      groupDStudents.push(name);
+    }
+  });
+
+  return [
+    {
+      id: "group-a",
+      name: "Group A — Foundation",
+      nameHi: "समूह क — बुनियादी आधार",
+      count: groupAStudents.length,
+      color: "rose",
+      focusSkill: "Letter Recognition & 1-Digit Numbers",
+      focusSkillHi: "अक्षर पहचान व 1-अंकीय संख्या ज्ञान",
+      targetGoal: "Recognize all 52 Hindi varnamala & count up to 20 with objects",
+      targetGoalHi: "सभी 52 वर्णों की पहचान व 20 तक वस्तुओं से गिनती",
+      students: groupAStudents,
+      recommendedActivityId: "act-foundation-1"
+    },
+    {
+      id: "group-b",
+      name: "Group B — Developing (Borrowing & Place Value)",
+      nameHi: "समूह ख — विकासशील (घटाव व स्थानीय मान)",
+      count: groupBStudents.length,
+      color: "amber",
+      focusSkill: "Subtraction with Regrouping (52 - 27)",
+      focusSkillHi: "उधार वाला घटाव एवं दहाई स्थानीय मान",
+      targetGoal: "Decompose tens into ones using manipulatives before abstract sums",
+      targetGoalHi: "मूर्तिक वस्तुओं द्वारा दहाई से इकाई में पुनर्समूहन की समझ",
+      students: groupBStudents,
+      recommendedActivityId: "act-subtraction-borrow"
+    },
+    {
+      id: "group-c",
+      name: "Group C — Reading Fluency",
+      nameHi: "समूह ग — धाराप्रवाह पठन",
+      count: groupCStudents.length,
+      color: "cyan",
+      focusSkill: "Word Decoding & Sentence Fluency (35+ WCPM)",
+      focusSkillHi: "शब्द पठन एवं 35+ शब्द/मिनट की धाराप्रवाह गति",
+      targetGoal: "Transition from spelling individual akshars to sight word automaticity",
+      targetGoalHi: "अक्षरों को अलग-अलग जोड़कर पढ़ने से पूरे शब्द को एक बार में पढ़ने की ओर बढ़ना",
+      students: groupCStudents,
+      recommendedActivityId: "act-reading-fluency"
+    },
+    {
+      id: "group-d",
+      name: "Group D — On Track & Excelling",
+      nameHi: "समूह घ — स्तरानुकूल एवं उन्नत",
+      count: groupDStudents.length,
+      color: "emerald",
+      focusSkill: "Grade-Level Mastery & Peer Mentoring",
+      focusSkillHi: "कक्षा स्तर प्रवीणता एवं सहपाठी शिक्षण",
+      targetGoal: "Solve multi-step reasoning story sums & independent chapter reading",
+      targetGoalHi: "बहु-चरणीय इबारती सवाल हल करना व स्वतंत्र कहानी पठन",
+      students: groupDStudents,
+      recommendedActivityId: "act-accelerated"
+    }
+  ];
+}

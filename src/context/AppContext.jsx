@@ -10,7 +10,7 @@ import {
 
 const AppContext = createContext(null);
 
-const DEFAULT_TEACHER = {
+export const DEMO_TEACHER = {
   id: 'tch-sunita-1',
   name: 'Sunita Devi',
   nameHi: 'सुनीता देवी',
@@ -22,8 +22,70 @@ const DEFAULT_TEACHER = {
   phone: '+91 98271 45092',
   grade: 'Grade 3',
   isDemo: true,
+  isAuthenticated: true
+};
+
+export const UNAUTHENTICATED_TEACHER = {
+  id: null,
+  name: '',
+  nameHi: '',
+  school: '',
+  schoolHi: '',
+  district: '',
+  state: '',
+  email: '',
+  phone: '',
+  grade: 'Grade 3',
+  isDemo: false,
   isAuthenticated: false
 };
+
+export const DEMO_LEARNING_CYCLES = [
+  {
+    id: 'cycle-priya-1',
+    studentId: 'stu-1',
+    studentName: 'Priya Sharma',
+    studentNameHi: 'प्रिया शर्मा',
+    rollNo: 1,
+    cycleName: '2-Digit Subtraction with Regrouping',
+    cycleNameHi: 'घटाव में पुनर्समूहन (उधार) संक्रिया',
+    step: 3,
+    baselineScore: 25,
+    baselineLevel: 'Grade 1.2',
+    targetGap: 'Top-From-Bottom Subtraction (52 - 27 = 35)',
+    targetGapHi: 'अंक उलटाव भ्रांति (उधार न लेना)',
+    intervention: '10-Rupee Note & Coin Exchange Station (15-min)',
+    interventionHi: '10 के नोट और सिक्कों का खेल (15-मिनट)',
+    reassessmentScore: null,
+    reassessmentLevel: null,
+    growth: 'In Progress...',
+    status: 'in_progress',
+    date: 'Active Now'
+  },
+  {
+    id: 'cycle-aarav-1',
+    studentId: 'stu-2',
+    studentName: 'Aarav Patel',
+    studentNameHi: 'आरव पटेल',
+    rollNo: 2,
+    cycleName: 'Oral Reading Fluency & Conjunct Matras',
+    cycleNameHi: 'मौखिक पठन प्रवाह एवं संयुक्त मात्राएं',
+    step: 5,
+    baselineScore: 22,
+    baselineLevel: '18 WCPM',
+    targetGap: 'Spelling letter-by-letter with long pauses',
+    targetGapHi: 'अक्षर जोड़-जोड़ कर पढ़ना, लंबे ठहराव',
+    intervention: 'Choral Echo Reading & Sight-Word Hopscotch',
+    interventionHi: 'समूह प्रतिध्वनि पठन एवं शब्द ग्रिड कूद',
+    reassessmentScore: 76,
+    reassessmentLevel: '44 WCPM',
+    growth: '+54% Fluency Gain',
+    status: 'gap_closed',
+    date: 'Completed'
+  }
+];
+
+const DEFAULT_TEACHER = UNAUTHENTICATED_TEACHER;
 
 const DEFAULT_CLASSES = [
   { 
@@ -121,10 +183,16 @@ export function AppProvider({ children }) {
     () => localStorage.getItem('learnlens_theme_intensity') || 'balanced'
   );
 
-  // 4. Teacher & School state
+  // 4. Teacher & School state (Default is UNAUTHENTICATED)
   const [teacher, setTeacher] = useState(() => {
     const saved = localStorage.getItem('learnlens_teacher');
-    return saved ? JSON.parse(saved) : DEFAULT_TEACHER;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (_) {}
+    }
+    return UNAUTHENTICATED_TEACHER;
   });
 
   // 5. Classes state
@@ -149,29 +217,40 @@ export function AppProvider({ children }) {
   const [students, setStudents] = useState(() => {
     const savedTeacherStr = localStorage.getItem('learnlens_teacher');
     let isDemo = false;
+    let isAuthenticated = false;
+    let email = '';
     if (savedTeacherStr) {
       try {
         const tObj = JSON.parse(savedTeacherStr);
         isDemo = !!tObj.isDemo;
+        isAuthenticated = !!tObj.isAuthenticated;
+        email = tObj.email || '';
       } catch (_) {}
     }
 
-    const saved = localStorage.getItem('learnlens_students');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // If in demo mode and previously had >2 students, clamp to the 2 demo students
-          if (isDemo && parsed.length > 2) {
-            return TWO_DEMO_STUDENTS;
-          }
-          return parsed;
-        }
-      } catch (_) {}
+    // Unauthenticated: clean empty slate!
+    if (!isAuthenticated) {
+      return [];
     }
 
-    // In demo mode: exactly 2 demo students. In real mode: clean empty array!
-    return isDemo ? TWO_DEMO_STUDENTS : [];
+    // Demo mode: exactly 2 demo students
+    if (isDemo) {
+      return TWO_DEMO_STUDENTS;
+    }
+
+    // Authenticated real educator: load their specific enrolled students only
+    if (email) {
+      const savedReal = localStorage.getItem(`learnlens_real_students_${email}`);
+      if (savedReal) {
+        try {
+          const parsed = JSON.parse(savedReal);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (_) {}
+      }
+    }
+
+    // If new login or no prior students: strictly clean empty array!
+    return [];
   });
 
   // 8. Selected student for inspection modal
@@ -193,75 +272,35 @@ export function AppProvider({ children }) {
   const [supabaseConfig, setSupabaseConfig] = useState(() => getSupabaseCredentials());
 
   // 12. Learning Improvement Cycle Tracking state
-  // Assess -> Analyze -> Identify Gaps -> Intervene -> Reassess -> Measure
+  // Demo mode gets 2 demo cycles for Priya Sharma & Aarav Patel.
+  // Real educators and guests start with [] (zero pre-data!).
   const [learningCycles, setLearningCycles] = useState(() => {
-    const saved = localStorage.getItem('learnlens_learning_cycles');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: 'cycle-rahul-1',
-        studentId: 1,
-        studentName: 'Rahul Sharma',
-        studentNameHi: 'राहुल शर्मा',
-        rollNo: 1,
-        cycleName: '2-Digit Subtraction with Regrouping',
-        cycleNameHi: 'घटाव में पुनर्समूहन (उधार) संक्रिया',
-        step: 5, // 0: Assess, 1: Analyze, 2: Identify Gaps, 3: Intervene, 4: Reassess, 5: Measured
-        baselineScore: 35,
-        baselineLevel: 'Grade 1.2',
-        targetGap: 'Independent digit subtraction (52 - 27 = 35)',
-        targetGapHi: 'अंक उलटाव भ्रांति (उधार न लेना)',
-        intervention: '10-Rupee Note & Coin Exchange Game (15-min Station)',
-        interventionHi: '10 के नोट और सिक्कों का खेल (15-मिनट स्टेशन)',
-        reassessmentScore: 84,
-        reassessmentLevel: 'Grade 3.1',
-        growth: '+49% Mastery Recovery',
-        status: 'gap_closed',
-        date: 'Sept 2026'
-      },
-      {
-        id: 'cycle-priya-1',
-        studentId: 2,
-        studentName: 'Priya Patel',
-        studentNameHi: 'प्रिया पटेल',
-        rollNo: 2,
-        cycleName: 'Oral Reading Fluency & Matra Blends',
-        cycleNameHi: 'मौखिक पठन प्रवाह एवं संयुक्त मात्राएं',
-        step: 5,
-        baselineScore: 22,
-        baselineLevel: '18 WCPM',
-        targetGap: 'Spelling letter-by-letter with long pauses',
-        targetGapHi: 'अक्षर जोड़-जोड़ कर पढ़ना, लंबे ठहराव',
-        intervention: 'Choral Echo Reading & Sight-Word Hopscotch',
-        interventionHi: 'समूह प्रतिध्वनि पठन एवं शब्द ग्रिड कूद',
-        reassessmentScore: 76,
-        reassessmentLevel: '44 WCPM',
-        growth: '+54% Fluency Gain',
-        status: 'gap_closed',
-        date: 'Sept 2026'
-      },
-      {
-        id: 'cycle-deepak-1',
-        studentId: 4,
-        studentName: 'Deepak Verma',
-        studentNameHi: 'दीपक वर्मा',
-        rollNo: 4,
-        cycleName: 'Base-10 Regrouping & Place Value',
-        cycleNameHi: 'दहाई स्थानीय मान एवं बंडल निर्माण',
-        step: 3, // In Intervention phase!
-        baselineScore: 30,
-        baselineLevel: 'Grade 1.1',
-        targetGap: 'Cannot regroup across zero (304 - 158)',
-        targetGapHi: 'शून्य में से उधार लेने की भ्रांति',
-        intervention: 'Matchstick Bundles & 100-Chart Arrow hops',
-        interventionHi: 'तीलियों के 10-10 के बंडल और संख्या चार्ट',
-        reassessmentScore: null,
-        reassessmentLevel: null,
-        growth: 'In Progress...',
-        status: 'in_progress',
-        date: 'Active Now'
+    const savedTeacherStr = localStorage.getItem('learnlens_teacher');
+    let isDemo = false;
+    let isAuthenticated = false;
+    let email = '';
+    if (savedTeacherStr) {
+      try {
+        const tObj = JSON.parse(savedTeacherStr);
+        isDemo = !!tObj.isDemo;
+        isAuthenticated = !!tObj.isAuthenticated;
+        email = tObj.email || '';
+      } catch (_) {}
+    }
+
+    if (!isAuthenticated) return [];
+    if (isDemo) return DEMO_LEARNING_CYCLES;
+
+    if (email) {
+      const savedCycles = localStorage.getItem(`learnlens_cycles_${email}`);
+      if (savedCycles) {
+        try {
+          const parsed = JSON.parse(savedCycles);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (_) {}
       }
-    ];
+    }
+    return [];
   });
 
   // Save changes to localStorage
@@ -283,7 +322,10 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('learnlens_students', JSON.stringify(students));
-  }, [students]);
+    if (teacher && !teacher.isDemo && teacher.email) {
+      localStorage.setItem(`learnlens_real_students_${teacher.email}`, JSON.stringify(students));
+    }
+  }, [students, teacher]);
 
   useEffect(() => {
     localStorage.setItem('learnlens_assessments', JSON.stringify(assessments));
@@ -295,7 +337,10 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('learnlens_learning_cycles', JSON.stringify(learningCycles));
-  }, [learningCycles]);
+    if (teacher && !teacher.isDemo && teacher.email) {
+      localStorage.setItem(`learnlens_cycles_${teacher.email}`, JSON.stringify(learningCycles));
+    }
+  }, [learningCycles, teacher]);
 
   // -------------------------------------------------------------
   // ACTIONS: TEACHER & SCHOOL MANAGEMENT
@@ -314,18 +359,26 @@ export function AppProvider({ children }) {
   };
 
   const loginTeacher = async ({ email, name, password }) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
     const updated = {
-      ...teacher,
-      name: name || (email ? email.split('@')[0] : 'Educator'),
-      email: email || teacher.email,
+      id: `tch-${Date.now()}`,
+      name: name || (cleanEmail ? cleanEmail.split('@')[0] : 'Educator'),
+      nameHi: name || 'शिक्षक',
+      school: 'Primary School',
+      schoolHi: 'शासकीय प्राथमिक शाला',
+      district: 'District Center',
+      state: 'State',
+      email: cleanEmail,
+      phone: '',
+      grade: 'Grade 3',
       isDemo: false,
       isAuthenticated: true
     };
     setTeacher(updated);
     localStorage.setItem('learnlens_teacher', JSON.stringify(updated));
 
-    // Load saved students for this real educator, or [] (NO pre student data!)
-    const savedKey = `learnlens_real_students_${updated.email || 'custom'}`;
+    // Load saved students ONLY if this educator previously added them, otherwise [] (ZERO PRE-DATA)
+    const savedKey = `learnlens_real_students_${cleanEmail || 'custom'}`;
     const savedReal = localStorage.getItem(savedKey);
     let realStudents = [];
     if (savedReal) {
@@ -337,12 +390,26 @@ export function AppProvider({ children }) {
     setStudents(realStudents);
     localStorage.setItem('learnlens_students', JSON.stringify(realStudents));
 
+    // Load saved cycles ONLY if this educator had them, otherwise [] (ZERO PRE-DATA)
+    const cycleKey = `learnlens_cycles_${cleanEmail || 'custom'}`;
+    const savedCycles = localStorage.getItem(cycleKey);
+    let realCycles = [];
+    if (savedCycles) {
+      try {
+        const p = JSON.parse(savedCycles);
+        if (Array.isArray(p)) realCycles = p;
+      } catch (_) {}
+    }
+    setLearningCycles(realCycles);
+    localStorage.setItem('learnlens_learning_cycles', JSON.stringify(realCycles));
+
     setCurrentView('dashboard');
     setIsAuthModalOpen(false);
     return updated;
   };
 
   const registerTeacher = async (details) => {
+    const cleanEmail = (details.email || `${(details.name || 'educator').toLowerCase().replace(/\s+/g, '.')}@school.edu`).trim().toLowerCase();
     const newTeacher = {
       id: `tch-${Date.now()}`,
       name: details.name,
@@ -351,8 +418,8 @@ export function AppProvider({ children }) {
       schoolHi: details.schoolHi || details.school,
       district: details.district,
       state: details.state,
-      email: details.email,
-      phone: details.phone,
+      email: cleanEmail,
+      phone: details.phone || '',
       grade: details.grade || 'Grade 3',
       isDemo: false,
       isAuthenticated: true
@@ -360,9 +427,14 @@ export function AppProvider({ children }) {
     setTeacher(newTeacher);
     localStorage.setItem('learnlens_teacher', JSON.stringify(newTeacher));
 
-    // Fresh empty student roster for newly registered teacher!
+    // Fresh empty student roster & empty cycles for newly registered teacher! Zero pre-data!
     setStudents([]);
     localStorage.setItem('learnlens_students', JSON.stringify([]));
+    localStorage.setItem(`learnlens_real_students_${cleanEmail}`, JSON.stringify([]));
+
+    setLearningCycles([]);
+    localStorage.setItem('learnlens_learning_cycles', JSON.stringify([]));
+    localStorage.setItem(`learnlens_cycles_${cleanEmail}`, JSON.stringify([]));
 
     setCurrentView('dashboard');
     setIsAuthModalOpen(false);
@@ -371,46 +443,38 @@ export function AppProvider({ children }) {
   };
 
   const setDemoTeacher = () => {
-    const demoTeacher = {
-      ...DEFAULT_TEACHER,
-      name: 'Sunita Devi',
-      nameHi: 'सुनीता देवी',
-      isDemo: true,
-      isAuthenticated: true
-    };
-    setTeacher(demoTeacher);
-    localStorage.setItem('learnlens_teacher', JSON.stringify(demoTeacher));
+    setTeacher(DEMO_TEACHER);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(DEMO_TEACHER));
 
-    // Demo mode has exactly the 2 demo students!
+    // Demo mode has exactly the 2 demo students & 2 demo cycles
     setStudents(TWO_DEMO_STUDENTS);
     localStorage.setItem('learnlens_students', JSON.stringify(TWO_DEMO_STUDENTS));
+
+    setLearningCycles(DEMO_LEARNING_CYCLES);
+    localStorage.setItem('learnlens_learning_cycles', JSON.stringify(DEMO_LEARNING_CYCLES));
 
     setCurrentView('dashboard');
     setIsAuthModalOpen(false);
   };
 
   const logoutTeacher = () => {
-    const unauth = {
-      ...DEFAULT_TEACHER,
-      isAuthenticated: false,
-      isDemo: false
-    };
-    setTeacher(unauth);
-    localStorage.setItem('learnlens_teacher', JSON.stringify(unauth));
+    setTeacher(UNAUTHENTICATED_TEACHER);
+    localStorage.removeItem('learnlens_teacher');
     setStudents([]);
     localStorage.setItem('learnlens_students', JSON.stringify([]));
+    setLearningCycles([]);
+    localStorage.removeItem('learnlens_learning_cycles');
     setSelectedStudent(null);
     setCurrentView('intro');
   };
 
   const resetToDemoData = () => {
-    setTeacher({
-      ...DEFAULT_TEACHER,
-      isDemo: true,
-      isAuthenticated: true
-    });
+    setTeacher(DEMO_TEACHER);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(DEMO_TEACHER));
     setStudents(TWO_DEMO_STUDENTS);
     localStorage.setItem('learnlens_students', JSON.stringify(TWO_DEMO_STUDENTS));
+    setLearningCycles(DEMO_LEARNING_CYCLES);
+    localStorage.setItem('learnlens_learning_cycles', JSON.stringify(DEMO_LEARNING_CYCLES));
   };
 
   // -------------------------------------------------------------
