@@ -125,7 +125,7 @@ export async function syncTeacherToCloud(teacherData) {
           state: teacherData.state,
           email: teacherData.email || null,
           phone: teacherData.phone || null
-        });
+        }, teacherData.email ? { onConflict: 'email' } : undefined);
       if (error) throw error;
       return { synced: true, data };
     } catch (err) {

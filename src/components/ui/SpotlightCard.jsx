@@ -11,7 +11,6 @@ export function SpotlightCard({
   onClick,
 }) {
   const divRef = useRef(null);
-  const [isFocused, setIsFocused] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [opacity, setOpacity] = useState(0);
 

@@ -11,8 +11,7 @@ import {
   Database,
   Trash2,
   FileType,
-  LogOut,
-  UploadCloud
+  LogOut
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TARL_GROUPS, getDynamicTarlGroups } from '../data/classroomData';

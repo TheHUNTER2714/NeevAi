@@ -354,7 +354,11 @@ export function AppProvider({ children }) {
     };
     setTeacher(updated);
     localStorage.setItem('learnlens_teacher', JSON.stringify(updated));
-    await syncTeacherToCloud(updated);
+    try {
+      await syncTeacherToCloud(updated);
+    } catch (e) {
+      console.warn('Teacher cloud sync error:', e);
+    }
     setCurrentView('dashboard');
   };
 
@@ -427,18 +431,42 @@ export function AppProvider({ children }) {
     setTeacher(newTeacher);
     localStorage.setItem('learnlens_teacher', JSON.stringify(newTeacher));
 
-    // Fresh empty student roster & empty cycles for newly registered teacher! Zero pre-data!
-    setStudents([]);
-    localStorage.setItem('learnlens_students', JSON.stringify([]));
-    localStorage.setItem(`learnlens_real_students_${cleanEmail}`, JSON.stringify([]));
+    // Preserve existing students if this educator previously enrolled them; otherwise clean empty roster
+    const studentStorageKey = `learnlens_real_students_${cleanEmail}`;
+    const savedRealStudents = localStorage.getItem(studentStorageKey);
+    let teacherStudents = [];
+    if (savedRealStudents) {
+      try {
+        const parsed = JSON.parse(savedRealStudents);
+        if (Array.isArray(parsed)) teacherStudents = parsed;
+      } catch (_) {}
+    }
+    setStudents(teacherStudents);
+    localStorage.setItem('learnlens_students', JSON.stringify(teacherStudents));
+    localStorage.setItem(studentStorageKey, JSON.stringify(teacherStudents));
 
-    setLearningCycles([]);
-    localStorage.setItem('learnlens_learning_cycles', JSON.stringify([]));
-    localStorage.setItem(`learnlens_cycles_${cleanEmail}`, JSON.stringify([]));
+    // Preserve existing cycles if this educator previously had them; otherwise clean empty cycles
+    const cycleStorageKey = `learnlens_cycles_${cleanEmail}`;
+    const savedCycles = localStorage.getItem(cycleStorageKey);
+    let teacherCycles = [];
+    if (savedCycles) {
+      try {
+        const parsed = JSON.parse(savedCycles);
+        if (Array.isArray(parsed)) teacherCycles = parsed;
+      } catch (_) {}
+    }
+    setLearningCycles(teacherCycles);
+    localStorage.setItem('learnlens_learning_cycles', JSON.stringify(teacherCycles));
+    localStorage.setItem(cycleStorageKey, JSON.stringify(teacherCycles));
 
     setCurrentView('dashboard');
     setIsAuthModalOpen(false);
-    await syncTeacherToCloud(newTeacher);
+
+    // Asynchronous background sync to Supabase without blocking UI
+    syncTeacherToCloud(newTeacher).catch((e) => {
+      console.warn('Teacher cloud sync background error:', e);
+    });
+
     return newTeacher;
   };
 

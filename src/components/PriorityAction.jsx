@@ -21,6 +21,7 @@ import { SpotlightCard } from './ui/SpotlightCard';
 import { PulsingBadge } from './ui/PulsingBadge';
 import { NumberTicker } from './ui/NumberTicker';
 import { TRANSLATIONS } from '../data/translations';
+import { useApp } from '../context/AppContext';
 
 export function PriorityAction({ lang, onOpenMisconception }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;

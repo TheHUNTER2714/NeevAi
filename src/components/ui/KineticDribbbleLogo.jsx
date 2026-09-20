@@ -59,13 +59,11 @@ export function KineticDribbbleLogo({
       title={isHi ? 'एनिमेशन फिर से चलाने के लिए क्लिक करें' : 'Click anywhere to replay animation'}
     >
       {/* ========================================================================= */}
-      {/* 1. CINEMATIC ROYAL VIOLET AMBIENT STAGE (Matching Dribbble Video)          */}
+      {/* 1. SEAMLESS TRANSPARENT STAGE (Directly Blends with Intro Video Background) */}
       {/* ========================================================================= */}
-      <div className="relative w-full min-h-[380px] sm:min-h-[440px] rounded-3xl overflow-hidden bg-gradient-to-br from-[#2f0857] via-[#20053e] to-[#140227] border border-violet-500/25 shadow-[0_0_60px_rgba(76,29,149,0.45)] flex items-center justify-center p-6 sm:p-12">
+      <div className="relative w-full min-h-[300px] sm:min-h-[360px] flex items-center justify-center p-4 sm:p-8 bg-transparent">
         
-        {/* Soft Volumetric Radiant Violet & Cyan Backlight */}
-        <div className="absolute inset-0 bg-radial from-violet-600/20 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+        {/* Stage is 100% transparent with no background boxes, glows, or borders */}
 
         {/* ======================================================================= */}
         {/* 2. ARCHITECTURAL ALIGNMENT CROSSHAIR LINES (Phase 1 to 2)              */}
@@ -179,6 +177,11 @@ export function KineticDribbbleLogo({
                     <stop offset="0%" stopColor="#c084fc" />
                     <stop offset="100%" stopColor="#a855f7" />
                   </linearGradient>
+                  {/* Transparent Center Aperture Mask: Allows background video to shine through */}
+                  <mask id="sparkleCenterHole">
+                    <rect width="100" height="100" fill="white" />
+                    <circle cx="50" cy="50" r="2.8" fill="black" />
+                  </mask>
                 </defs>
 
                 {/* --- Top-Left Lilac Accent Quadrant Block (Matching Frame 00:02 of video) --- */}
@@ -194,18 +197,12 @@ export function KineticDribbbleLogo({
                 />
 
                 {/* --- The Master Geometric Sparkle / Modular Star --- */}
-                {/* 
-                  Formed by two opposing curved corner wedges with negative-space arcs 
-                  as seen in Dribbble reference video (Kreatank / Daniel Bodea style):
-                  - Upper-Left Wedge: starts from (50, 16), curves inward to (50, 50), curves outward to (16, 50).
-                  - Lower-Right Wedge: starts from (50, 84), curves inward to (50, 50), curves outward to (84, 50).
-                */}
                 <motion.g
                   initial={{ scale: 0.8 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
                 >
-                  {/* Primary 4-Point Geometric Sparkle / Compass Mark */}
+                  {/* Primary 4-Point Geometric Sparkle / Compass Mark with transparent center aperture */}
                   <path
                     d="M 50,14 
                        C 50,34 34,50 14,50 
@@ -213,6 +210,7 @@ export function KineticDribbbleLogo({
                        C 50,66 66,50 86,50 
                        C 66,50 50,34 50,14 Z"
                     fill="url(#dribbbleWhiteGrad)"
+                    mask="url(#sparkleCenterHole)"
                   />
 
                   {/* Opposing Organic Cutaway Accent for modular depth */}
@@ -222,9 +220,6 @@ export function KineticDribbbleLogo({
                     opacity={phase >= 2 ? 0 : 0.25}
                     className="transition-opacity duration-500"
                   />
-
-                  {/* Luminous Center Point */}
-                  <circle cx="50" cy="50" r="2.5" fill="#2e0854" />
                 </motion.g>
               </svg>
             </motion.div>
@@ -287,11 +282,11 @@ export function KineticDribbbleLogo({
             initial={{ opacity: 0 }}
             animate={{ opacity: phase >= 4 ? 1 : 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute bottom-4 sm:bottom-6 flex items-center gap-2"
+            className="absolute bottom-1 sm:bottom-2 flex items-center gap-2"
           >
             <button
               onClick={handleReplay}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-mono transition-all backdrop-blur-md shadow-lg active:scale-95 group/btn"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-950/70 hover:bg-slate-900 border border-white/15 text-slate-200 hover:text-white text-xs font-mono transition-all backdrop-blur-md shadow-lg active:scale-95 group/btn cursor-pointer"
               title="Replay Logo Animation"
             >
               <RotateCcw className="w-3.5 h-3.5 text-violet-300 group-hover/btn:-rotate-90 transition-transform duration-300" />

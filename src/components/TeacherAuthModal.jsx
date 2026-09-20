@@ -38,19 +38,19 @@ export function TeacherAuthModal() {
   // Mode: 'signin' or 'register'
   const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'register'
 
-  // Form states
-  const [name, setName] = useState(teacher?.name || '');
-  const [school, setSchool] = useState(teacher?.school || '');
-  const [district, setDistrict] = useState(teacher?.district || '');
-  const [state, setState] = useState(teacher?.state || '');
-  const [email, setEmail] = useState(teacher?.email || '');
-  const [phone, setPhone] = useState(teacher?.phone || '');
+  // Form states - strictly empty for unauthenticated visitors so placeholders show cleanly
+  const [name, setName] = useState(teacher?.isAuthenticated ? (teacher.name || '') : '');
+  const [school, setSchool] = useState(teacher?.isAuthenticated ? (teacher.school || '') : '');
+  const [district, setDistrict] = useState(teacher?.isAuthenticated ? (teacher.district || '') : '');
+  const [state, setState] = useState(teacher?.isAuthenticated ? (teacher.state || '') : '');
+  const [email, setEmail] = useState(teacher?.isAuthenticated ? (teacher.email || '') : '');
+  const [phone, setPhone] = useState(teacher?.isAuthenticated ? (teacher.phone || '') : '');
   const [password, setPassword] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Sync if teacher changes
+  // Sync when authenticated teacher changes (e.g. demo mode or edited profile)
   useEffect(() => {
-    if (teacher && teacher.isDemo) {
+    if (teacher && teacher.isAuthenticated) {
       setName(teacher.name || '');
       setSchool(teacher.school || '');
       setDistrict(teacher.district || '');
@@ -59,6 +59,15 @@ export function TeacherAuthModal() {
       setPhone(teacher.phone || '');
     }
   }, [teacher]);
+
+  const handleToggleMode = () => {
+    const nextMode = authMode === 'signin' ? 'register' : 'signin';
+    if (nextMode === 'register' && name && name.includes('@') && !email) {
+      setEmail(name.trim());
+      setName('');
+    }
+    setAuthMode(nextMode);
+  };
 
   const handleDemoSwitch = () => {
     setDemoTeacher();
@@ -73,33 +82,47 @@ export function TeacherAuthModal() {
       setSavedSuccess(false);
       setIsAuthModalOpen(false);
       setCurrentView('dashboard');
-    }, 600);
+    }, 400);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (authMode === 'signin') {
-      await loginTeacher({
-        email: email || name || 'educator@gov.in',
-        name: name || 'Educator',
-        password: password || 'password'
-      });
-    } else {
-      await registerTeacher({
-        name: name || 'New Educator',
-        school: school || 'Primary School',
-        district: district || 'District Center',
-        state: state || 'State Education Board',
-        email: email || `${name.toLowerCase().replace(/\s+/g, '.') || 'educator'}@school.edu`,
-        phone: phone || '+91 90000 00000'
-      });
-    }
-    setSavedSuccess(true);
-    setTimeout(() => {
-      setSavedSuccess(false);
+    try {
+      if (authMode === 'signin') {
+        const cleanName = (name || '').trim();
+        const isEmailInput = cleanName.includes('@');
+        await loginTeacher({
+          email: isEmailInput ? cleanName : ((email || '').trim() || 'educator@gov.in'),
+          name: isEmailInput ? cleanName.split('@')[0] : (cleanName || 'Educator'),
+          password: password || 'password'
+        });
+      } else {
+        const cleanName = (name || '').trim();
+        const cleanEmailInput = (email || '').trim();
+        const safeCleanEmail = cleanEmailInput.includes('@')
+          ? cleanEmailInput
+          : `${(cleanName || 'educator').toLowerCase().replace(/[^a-z0-9]/g, '.') || 'educator'}@school.edu`;
+
+        await registerTeacher({
+          name: cleanName || 'Educator',
+          school: (school || 'Primary School').trim(),
+          district: (district || 'District Center').trim(),
+          state: (state || 'State Education Board').trim(),
+          email: safeCleanEmail,
+          phone: (phone || '+91 90000 00000').trim()
+        });
+      }
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        setIsAuthModalOpen(false);
+        setCurrentView('dashboard');
+      }, 400);
+    } catch (err) {
+      console.error('Auth submission error:', err);
       setIsAuthModalOpen(false);
       setCurrentView('dashboard');
-    }, 600);
+    }
   };
 
   if (!isAuthModalOpen) return null;
@@ -179,8 +202,8 @@ export function TeacherAuthModal() {
             <div className="mt-8">
               <button
                 type="button"
-                onClick={() => setAuthMode(authMode === 'signin' ? 'register' : 'signin')}
-                className="px-7 py-2.5 rounded-full border-2 border-white text-white font-display font-bold text-xs tracking-wider uppercase hover:bg-white hover:text-[#be185d] active:scale-95 transition-all shadow-lg"
+                onClick={handleToggleMode}
+                className="px-7 py-2.5 rounded-full border-2 border-white text-white font-display font-bold text-xs tracking-wider uppercase hover:bg-white hover:text-[#be185d] active:scale-95 transition-all shadow-lg cursor-pointer"
               >
                 {authMode === 'signin' ? 'SIGN UP / REGISTER' : 'SIGN IN'}
               </button>

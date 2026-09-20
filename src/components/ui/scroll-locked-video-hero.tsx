@@ -14,7 +14,6 @@ import {
   RotateCcw,
   ChevronRight
 } from "lucide-react";
-import { NeevLogo } from "./ElisaLogo";
 import { KineticDribbbleLogo } from "./KineticDribbbleLogo";
 
 export interface ScrollLockedVideoHeroProps {

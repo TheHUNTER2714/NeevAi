@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { 
   X, 
   UploadCloud, 
-  FileText, 
   FileType, 
   Check, 
   AlertCircle, 
@@ -11,8 +10,7 @@ import {
   Sparkles, 
   ArrowRight,
   FileCheck,
-  ClipboardPaste,
-  BookOpen
+  ClipboardPaste
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BorderBeam } from './ui/BorderBeam';

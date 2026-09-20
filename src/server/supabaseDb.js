@@ -136,29 +136,56 @@ export async function insertAssessment(a) {
 }
 
 export async function upsertTeacher(t) {
-  const query = `
-    INSERT INTO teachers (id, name, email, phone, school_name, district, state)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    ON CONFLICT (id) DO UPDATE SET
-      name = EXCLUDED.name,
-      school_name = EXCLUDED.school_name,
-      district = EXCLUDED.district,
-      state = EXCLUDED.state,
-      email = EXCLUDED.email,
-      phone = EXCLUDED.phone
-    RETURNING *;
-  `;
-  const values = [
-    t.id || 'tch-1',
-    t.name,
-    t.email || null,
-    t.phone || null,
-    t.school || t.school_name || 'Rajkiya Vidyalaya',
-    t.district || 'Bilaspur',
-    t.state || 'Chhattisgarh'
-  ];
-  const res = await pool.query(query, values);
-  return res.rows[0];
+  const teacherId = t.id || `tch-${Date.now()}`;
+  const cleanEmail = t.email ? t.email.trim().toLowerCase() : null;
+
+  if (cleanEmail) {
+    const query = `
+      INSERT INTO teachers (id, name, email, phone, school_name, district, state)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (email) DO UPDATE SET
+        name = EXCLUDED.name,
+        school_name = EXCLUDED.school_name,
+        district = EXCLUDED.district,
+        state = EXCLUDED.state,
+        phone = COALESCE(EXCLUDED.phone, teachers.phone)
+      RETURNING *;
+    `;
+    const values = [
+      teacherId,
+      t.name,
+      cleanEmail,
+      t.phone || null,
+      t.school || t.school_name || 'Rajkiya Vidyalaya',
+      t.district || 'Bilaspur',
+      t.state || 'Chhattisgarh'
+    ];
+    const res = await pool.query(query, values);
+    return res.rows[0];
+  } else {
+    const query = `
+      INSERT INTO teachers (id, name, email, phone, school_name, district, state)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        school_name = EXCLUDED.school_name,
+        district = EXCLUDED.district,
+        state = EXCLUDED.state,
+        phone = COALESCE(EXCLUDED.phone, teachers.phone)
+      RETURNING *;
+    `;
+    const values = [
+      teacherId,
+      t.name,
+      null,
+      t.phone || null,
+      t.school || t.school_name || 'Rajkiya Vidyalaya',
+      t.district || 'Bilaspur',
+      t.state || 'Chhattisgarh'
+    ];
+    const res = await pool.query(query, values);
+    return res.rows[0];
+  }
 }
 
 export async function upsertClass(c) {
