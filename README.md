@@ -1,4 +1,5 @@
 # NeevAI (नींव AI) — Foundational Learning Diagnostics & Action Engine
+live link https://neevai-ov80.onrender.com
 
 > **Empowering Teachers to See Invisible Learning Gaps in Multi-Grade Classrooms and Take 15-Minute Concrete Action.**
 
