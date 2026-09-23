@@ -11,7 +11,10 @@ import {
   CheckCircle2, 
   ArrowRight,
   BookOpen,
-  GraduationCap
+  GraduationCap,
+  Eye,
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BorderBeam } from './ui/BorderBeam';
@@ -46,6 +49,9 @@ export function TeacherAuthModal() {
   const [email, setEmail] = useState(teacher?.isAuthenticated ? (teacher.email || '') : '');
   const [phone, setPhone] = useState(teacher?.isAuthenticated ? (teacher.phone || '') : '');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Sync when authenticated teacher changes (e.g. demo mode or edited profile)
@@ -66,6 +72,9 @@ export function TeacherAuthModal() {
       setEmail(name.trim());
       setName('');
     }
+    setAuthError('');
+    setPassword('');
+    setConfirmPassword('');
     setAuthMode(nextMode);
   };
 
@@ -77,6 +86,7 @@ export function TeacherAuthModal() {
     setState('Chhattisgarh');
     setEmail('sunita.devi.edu@gov.in');
     setPhone('+91 98271 45092');
+    setAuthError('');
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
@@ -87,31 +97,77 @@ export function TeacherAuthModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setAuthError('');
+
     try {
       if (authMode === 'signin') {
-        const cleanName = (name || '').trim();
-        const isEmailInput = cleanName.includes('@');
+        const cleanIdentifier = (name || '').trim();
+        const cleanPassword = (password || '').trim();
+
+        if (!cleanIdentifier) {
+          setAuthError(lang === 'hi' ? 'कृपया अपना ईमेल या नाम दर्ज करें।' : 'Please enter your email or name.');
+          return;
+        }
+        if (!cleanPassword) {
+          setAuthError(lang === 'hi' ? 'कृपया अपना पासवर्ड दर्ज करें।' : 'Please enter your password.');
+          return;
+        }
+
         await loginTeacher({
-          email: isEmailInput ? cleanName : ((email || '').trim() || 'educator@gov.in'),
-          name: isEmailInput ? cleanName.split('@')[0] : (cleanName || 'Educator'),
-          password: password || 'password'
+          email: cleanIdentifier,
+          name: cleanIdentifier,
+          password: cleanPassword
         });
       } else {
         const cleanName = (name || '').trim();
-        const cleanEmailInput = (email || '').trim();
-        const safeCleanEmail = cleanEmailInput.includes('@')
-          ? cleanEmailInput
-          : `${(cleanName || 'educator').toLowerCase().replace(/[^a-z0-9]/g, '.') || 'educator'}@school.edu`;
+        const cleanSchool = (school || '').trim();
+        const cleanDistrict = (district || '').trim();
+        const cleanState = (state || '').trim();
+        const cleanEmailInput = (email || '').trim().toLowerCase();
+        const cleanPhone = (phone || '').trim();
+        const cleanPassword = (password || '').trim();
+        const cleanConfirmPassword = (confirmPassword || '').trim();
+
+        if (!cleanName) {
+          setAuthError(lang === 'hi' ? 'कृपया अपना पूरा नाम दर्ज करें।' : 'Please enter your full name.');
+          return;
+        }
+        if (!cleanSchool) {
+          setAuthError(lang === 'hi' ? 'कृपया विद्यालय का नाम दर्ज करें।' : 'Please enter your school name.');
+          return;
+        }
+        if (!cleanDistrict) {
+          setAuthError(lang === 'hi' ? 'कृपया जिले का नाम दर्ज करें।' : 'Please enter your district.');
+          return;
+        }
+        if (!cleanState) {
+          setAuthError(lang === 'hi' ? 'कृपया राज्य का नाम दर्ज करें।' : 'Please enter your state.');
+          return;
+        }
+        if (!cleanEmailInput || !cleanEmailInput.includes('@')) {
+          setAuthError(lang === 'hi' ? 'कृपया वैध ईमेल पता दर्ज करें (लॉगिन हेतु आवश्यक)।' : 'Please enter a valid email address (required to sign in).');
+          return;
+        }
+        if (!cleanPassword || cleanPassword.length < 4) {
+          setAuthError(lang === 'hi' ? 'कृपया कम से कम 4 अक्षरों का पासवर्ड बनाएं।' : 'Please create a password of at least 4 characters.');
+          return;
+        }
+        if (cleanPassword !== cleanConfirmPassword) {
+          setAuthError(lang === 'hi' ? 'पासवर्ड और पुष्टि पासवर्ड मेल नहीं खाते।' : 'Passwords do not match. Please re-enter.');
+          return;
+        }
 
         await registerTeacher({
-          name: cleanName || 'Educator',
-          school: (school || 'Primary School').trim(),
-          district: (district || 'District Center').trim(),
-          state: (state || 'State Education Board').trim(),
-          email: safeCleanEmail,
-          phone: (phone || '+91 90000 00000').trim()
+          name: cleanName,
+          school: cleanSchool,
+          district: cleanDistrict,
+          state: cleanState,
+          email: cleanEmailInput,
+          phone: cleanPhone,
+          password: cleanPassword
         });
       }
+
       setSavedSuccess(true);
       setTimeout(() => {
         setSavedSuccess(false);
@@ -120,8 +176,7 @@ export function TeacherAuthModal() {
       }, 400);
     } catch (err) {
       console.error('Auth submission error:', err);
-      setIsAuthModalOpen(false);
-      setCurrentView('dashboard');
+      setAuthError(err.message || (lang === 'hi' ? 'प्रमाणीकरण में त्रुटि हुई।' : 'Authentication failed. Please check your credentials.'));
     }
   };
 
@@ -281,22 +336,44 @@ export function TeacherAuthModal() {
           </div>
 
           {/* Form Area */}
-          <form onSubmit={handleSubmit} className="space-y-4 my-auto py-4">
+          <form onSubmit={handleSubmit} className="space-y-4 my-auto py-3">
             
+            {/* Contextual Auth Error Banner */}
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-center justify-between gap-2 shadow-lg animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+                {authError.toLowerCase().includes('register') && authMode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('register');
+                      setAuthError('');
+                    }}
+                    className="text-cyan-400 hover:text-cyan-300 font-bold text-xs underline shrink-0 cursor-pointer"
+                  >
+                    {lang === 'hi' ? 'पंजीकरण करें →' : 'Register Here →'}
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* If Sign In mode: Email / Teacher identifier & Password */}
             {authMode === 'signin' ? (
               <div className="space-y-3.5">
                 <div>
                   <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{lang === 'hi' ? 'शिक्षक ईमेल या नाम' : 'Educator Email or Name'}</span>
+                    <span>{lang === 'hi' ? 'शिक्षक ईमेल या नाम *' : 'Educator Email or Name *'}</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. sunita.devi.edu@gov.in or Sunita Devi"
+                    placeholder="e.g. sunita.devi.edu@gov.in or your registered email"
                     className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 font-body transition-colors"
                   />
                 </div>
@@ -304,15 +381,26 @@ export function TeacherAuthModal() {
                 <div>
                   <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{lang === 'hi' ? 'पासवर्ड / क्रेडेंशियल' : 'Password / PIN'}</span>
+                    <span>{lang === 'hi' ? 'पासवर्ड *' : 'Password *'}</span>
                   </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 font-body transition-colors"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter the password you created during registration"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 font-body transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Remember & Demo Hint */}
@@ -331,94 +419,146 @@ export function TeacherAuthModal() {
                 </div>
               </div>
             ) : (
-              /* If Register mode: Full Profile details */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[280px] overflow-y-auto pr-1">
-                <div>
-                  <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Teacher Name *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Sunita Devi"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
-                  />
+              /* If Register mode: Full Profile details + Password Creation */
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1">
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>{lang === 'hi' ? 'शिक्षक का पूरा नाम *' : 'Teacher Full Name *'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Ramesh Chandra"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <School className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>{lang === 'hi' ? 'शाला का नाम *' : 'School Name *'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={school}
+                      onChange={(e) => setSchool(e.target.value)}
+                      placeholder="Govt. Primary School, Rampur"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-orange-400" />
+                      <span>{lang === 'hi' ? 'ज़िला *' : 'District *'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      placeholder="e.g. Raipur"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-orange-400" />
+                      <span>{lang === 'hi' ? 'राज्य *' : 'State *'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      placeholder="e.g. Chhattisgarh"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-rose-400" />
+                      <span>{lang === 'hi' ? 'ईमेल आईडी * (साइन इन हेतु)' : 'Email ID * (Used to Sign In)'}</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="ramesh.chandra@gov.in"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-400 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{lang === 'hi' ? 'मोबाइल नंबर' : 'Mobile Number'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+91 98000 00000"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-rose-400" />
+                      <span>{lang === 'hi' ? 'पासवर्ड बनाएं * (साइन इन हेतु)' : 'Create Password * (For Sign In)'}</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Min. 4 characters"
+                        className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-3 pr-9 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-400 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-rose-400" />
+                      <span>{lang === 'hi' ? 'पासवर्ड की पुष्टि करें *' : 'Confirm Password *'}</span>
+                    </label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-400 transition-colors"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <School className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>School Name *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={school}
-                    onChange={(e) => setSchool(e.target.value)}
-                    placeholder="Govt. Primary School, Kheda"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-orange-400" />
-                    <span>District *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    placeholder="Bilaspur"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-orange-400" />
-                    <span>State *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="Chhattisgarh"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Email ID</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="sunita.devi@gov.in"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono font-semibold text-slate-300 block mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Mobile Number</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98271 45092"
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
-                  />
+                <div className="p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/25 text-[11px] text-cyan-300 flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
+                  <span>
+                    {lang === 'hi'
+                      ? 'यह पासवर्ड केवल आपके द्वारा बाद में साइन इन करने के लिए सुरक्षित रूप से उपयोग किया जाएगा।'
+                      : 'This password will be securely saved and required to sign into your cockpit later.'}
+                  </span>
                 </div>
               </div>
             )}

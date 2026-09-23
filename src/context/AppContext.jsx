@@ -196,6 +196,42 @@ try {
   });
 } catch (_) {}
 
+// Registered teachers persistent registry
+export const DEFAULT_REGISTERED_TEACHERS = [
+  {
+    id: 'tch-sunita-1',
+    name: 'Sunita Devi',
+    nameHi: 'सुनीता देवी',
+    school: 'Govt. Primary School, Kheda',
+    schoolHi: 'शासकीय प्राथमिक शाला, खेड़ा',
+    district: 'Bilaspur',
+    state: 'Chhattisgarh',
+    email: 'sunita.devi.edu@gov.in',
+    phone: '+91 98271 45092',
+    password: 'password123',
+    grade: 'Grade 3',
+    isDemo: true,
+    isAuthenticated: true
+  }
+];
+
+export const getRegisteredTeachers = () => {
+  try {
+    const raw = localStorage.getItem('learnlens_registered_teachers');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (_) {}
+  return DEFAULT_REGISTERED_TEACHERS;
+};
+
+export const saveRegisteredTeachers = (list) => {
+  try {
+    localStorage.setItem('learnlens_registered_teachers', JSON.stringify(list));
+  } catch (_) {}
+};
+
 export function AppProvider({ children }) {
   // 1. Language state: 'en' or 'hi'
   const [lang, setLang] = useState(() => localStorage.getItem('learnlens_lang') || 'en');
@@ -388,26 +424,67 @@ export function AppProvider({ children }) {
   };
 
   const loginTeacher = async ({ email, name, password }) => {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const updated = {
-      id: `tch-${Date.now()}`,
-      name: name || (cleanEmail ? cleanEmail.split('@')[0] : 'Educator'),
-      nameHi: name || 'शिक्षक',
-      school: 'Primary School',
-      schoolHi: 'शासकीय प्राथमिक शाला',
-      district: 'District Center',
-      state: 'State',
-      email: cleanEmail,
-      phone: '',
-      grade: 'Grade 3',
-      isDemo: false,
+    const inputIdentifier = (email || name || '').trim().toLowerCase();
+    const inputPassword = (password || '').trim();
+
+    if (!inputIdentifier) {
+      throw new Error(lang === 'hi' ? 'कृपया अपना ईमेल या नाम दर्ज करें।' : 'Please enter your email or name.');
+    }
+    if (!inputPassword) {
+      throw new Error(lang === 'hi' ? 'कृपया अपना पासवर्ड दर्ज करें।' : 'Please enter your password.');
+    }
+
+    const currentTeachers = getRegisteredTeachers();
+
+    // Look for matching teacher by email, phone, or name
+    const foundTeacher = currentTeachers.find((t) => {
+      const matchEmail = t.email && t.email.toLowerCase() === inputIdentifier;
+      const matchPhone = t.phone && t.phone.replace(/[^0-9]/g, '') === inputIdentifier.replace(/[^0-9]/g, '');
+      const matchName = t.name && t.name.toLowerCase() === inputIdentifier;
+      return matchEmail || matchPhone || matchName;
+    });
+
+    // Special check for 1-click demo / Sunita
+    if (!foundTeacher && (inputIdentifier === 'demo' || inputIdentifier.includes('sunita'))) {
+      const demoTeacher = DEMO_TEACHER;
+      setTeacher(demoTeacher);
+      localStorage.setItem('learnlens_teacher', JSON.stringify(demoTeacher));
+      setStudents(TWO_DEMO_STUDENTS);
+      localStorage.setItem('learnlens_students', JSON.stringify(TWO_DEMO_STUDENTS));
+      setLearningCycles(DEMO_LEARNING_CYCLES);
+      localStorage.setItem('learnlens_learning_cycles', JSON.stringify(DEMO_LEARNING_CYCLES));
+      setCurrentView('dashboard');
+      setIsAuthModalOpen(false);
+      return demoTeacher;
+    }
+
+    if (!foundTeacher) {
+      throw new Error(
+        lang === 'hi'
+          ? 'इस ईमेल या नाम से कोई शिक्षक खाता नहीं मिला। कृपया पहले पंजीकरण (Register) करें।'
+          : 'No account found with this email or name. Please switch to Register to create your account.'
+      );
+    }
+
+    // Verify Password
+    if (foundTeacher.password && foundTeacher.password !== inputPassword) {
+      throw new Error(
+        lang === 'hi'
+          ? 'गलत पासवर्ड। कृपया वह पासवर्ड दर्ज करें जो आपने पंजीकरण के समय बनाया था।'
+          : 'Incorrect password. Please enter the password you created during registration.'
+      );
+    }
+
+    const authenticatedTeacher = {
+      ...foundTeacher,
       isAuthenticated: true
     };
-    setTeacher(updated);
-    localStorage.setItem('learnlens_teacher', JSON.stringify(updated));
 
-    // Load saved students ONLY if this educator previously added them, otherwise [] (ZERO PRE-DATA)
-    const savedKey = `learnlens_real_students_${cleanEmail || 'custom'}`;
+    setTeacher(authenticatedTeacher);
+    localStorage.setItem('learnlens_teacher', JSON.stringify(authenticatedTeacher));
+
+    const cleanEmail = authenticatedTeacher.email || 'custom';
+    const savedKey = `learnlens_real_students_${cleanEmail}`;
     const savedReal = localStorage.getItem(savedKey);
     let realStudents = [];
     if (savedReal) {
@@ -419,8 +496,7 @@ export function AppProvider({ children }) {
     setStudents(realStudents);
     localStorage.setItem('learnlens_students', JSON.stringify(realStudents));
 
-    // Load saved cycles ONLY if this educator had them, otherwise [] (ZERO PRE-DATA)
-    const cycleKey = `learnlens_cycles_${cleanEmail || 'custom'}`;
+    const cycleKey = `learnlens_cycles_${cleanEmail}`;
     const savedCycles = localStorage.getItem(cycleKey);
     let realCycles = [];
     if (savedCycles) {
@@ -434,25 +510,53 @@ export function AppProvider({ children }) {
 
     setCurrentView('dashboard');
     setIsAuthModalOpen(false);
-    return updated;
+    return authenticatedTeacher;
   };
 
   const registerTeacher = async (details) => {
     const cleanEmail = (details.email || `${(details.name || 'educator').toLowerCase().replace(/\s+/g, '.')}@school.edu`).trim().toLowerCase();
+    const createdPassword = (details.password || '').trim();
+
+    if (!createdPassword) {
+      throw new Error(lang === 'hi' ? 'कृपया अपना पासवर्ड बनाएं।' : 'Please create a password for your account.');
+    }
+    if (createdPassword.length < 4) {
+      throw new Error(lang === 'hi' ? 'पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।' : 'Password must be at least 4 characters long.');
+    }
+
     const newTeacher = {
       id: `tch-${Date.now()}`,
-      name: details.name,
-      nameHi: details.nameHi || details.name,
-      school: details.school,
-      schoolHi: details.schoolHi || details.school,
-      district: details.district,
-      state: details.state,
+      name: (details.name || 'Educator').trim(),
+      nameHi: details.nameHi || details.name || 'शिक्षक',
+      school: (details.school || 'Primary School').trim(),
+      schoolHi: details.schoolHi || details.school || 'शासकीय प्राथमिक शाला',
+      district: (details.district || 'District Center').trim(),
+      state: (details.state || 'State').trim(),
       email: cleanEmail,
-      phone: details.phone || '',
+      phone: (details.phone || '').trim(),
+      password: createdPassword,
       grade: details.grade || 'Grade 3',
       isDemo: false,
-      isAuthenticated: true
+      isAuthenticated: true,
+      registeredAt: new Date().toISOString()
     };
+
+    // Save or update in persistent registered teachers list
+    const currentTeachers = getRegisteredTeachers();
+    const existingIndex = currentTeachers.findIndex(
+      (t) => (t.email && t.email.toLowerCase() === cleanEmail) || 
+             (details.phone && t.phone && t.phone === details.phone.trim())
+    );
+
+    let updatedList;
+    if (existingIndex >= 0) {
+      updatedList = [...currentTeachers];
+      updatedList[existingIndex] = { ...updatedList[existingIndex], ...newTeacher };
+    } else {
+      updatedList = [...currentTeachers, newTeacher];
+    }
+    saveRegisteredTeachers(updatedList);
+
     setTeacher(newTeacher);
     localStorage.setItem('learnlens_teacher', JSON.stringify(newTeacher));
 

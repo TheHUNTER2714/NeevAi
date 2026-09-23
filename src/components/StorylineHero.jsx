@@ -10,7 +10,7 @@ import { PrismaHero } from './ui/prisma-hero';
 import { AboutSection } from './AboutSection';
 
 export function StorylineHero({ onExploreCockpit, onTryAssessment, lang }) {
-  const { setIsAuthModalOpen } = useApp();
+  const { setIsAuthModalOpen, teacher } = useApp();
   const canvasRef = useRef(null);
 
   // Interactive Cosmic Neural Network Canvas (Subtle ambient constellation, no clutter)
@@ -141,7 +141,7 @@ export function StorylineHero({ onExploreCockpit, onTryAssessment, lang }) {
         <PrismaHero
           onExploreCockpit={onExploreCockpit}
           onTryAssessment={onTryAssessment}
-          onTeacherLogin={() => setIsAuthModalOpen(true)}
+          onTeacherLogin={!teacher?.isAuthenticated ? () => setIsAuthModalOpen(true) : undefined}
           lang={lang}
         />
       </div>
