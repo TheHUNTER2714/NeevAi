@@ -14,8 +14,10 @@ import {
   Package,
   Mic,
   MessageSquare,
-  Home
+  Home,
+  Users
 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import { BorderBeam } from './ui/BorderBeam';
 import { AnimatedShinyText } from './ui/AnimatedShinyText';
 import { SpotlightCard } from './ui/SpotlightCard';
@@ -26,6 +28,7 @@ import { TRANSLATIONS } from '../data/translations';
 
 export function ActivityGenerator({ lang }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const { students, activeClass, setSelectedStudent, setCurrentView } = useApp();
 
   // Form selections
   const [selectedSkill, setSelectedSkill] = useState('subtraction-borrow');
@@ -69,6 +72,34 @@ export function ActivityGenerator({ lang }) {
   };
 
   const isHindi = selectedLang === 'hi';
+
+  // Target cohort calculation derived from live active roster
+  const targetStudents = (students || []).filter(s => {
+    if (!s) return false;
+    const gap = (s.primaryGap || '').toLowerCase();
+    const misc = (s.detectedMisconception || '').toLowerCase();
+    const skill = (selectedSkill || '').toLowerCase();
+
+    if (skill.includes('subtraction')) {
+      return (s.skills && s.skills.subtractionBorrowing < 70) ||
+        gap.includes('subtraction') || gap.includes('borrow') ||
+        misc.includes('subtraction') || misc.includes('borrow');
+    }
+    if (skill.includes('reading') || skill.includes('phonics')) {
+      return (s.skills && s.skills.readingFluency < 70) ||
+        gap.includes('reading') || gap.includes('fluency') || gap.includes('phonics') ||
+        misc.includes('reading') || misc.includes('fluency');
+    }
+    if (skill.includes('word-problems')) {
+      return (s.skills && s.skills.wordProblems < 70) ||
+        gap.includes('word') || gap.includes('problem');
+    }
+    if (skill.includes('number') || skill.includes('place')) {
+      return (s.skills && s.skills.numberSense < 70) ||
+        gap.includes('place') || gap.includes('number');
+    }
+    return s.status === 'intervention' || s.status === 'remediation';
+  });
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
@@ -271,6 +302,51 @@ export function ActivityGenerator({ lang }) {
                   <span>{t.printBtn}</span>
                 </button>
               </div>
+            </div>
+
+            {/* Live Target Cohort Banner */}
+            <div className="mt-4 p-4 rounded-xl bg-slate-900/90 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Users className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-mono font-bold text-indigo-300 uppercase tracking-wider">
+                    Live Targeted Cohort ({targetStudents.length} Students Flagged in {activeClass?.name || 'Class 3A'})
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {targetStudents.length === 0 ? (
+                    <span className="text-xs text-emerald-400 font-mono">
+                      ✓ All students currently on-track for this skill in {activeClass?.name || 'Class 3A'}.
+                    </span>
+                  ) : (
+                    targetStudents.map(student => (
+                      <button
+                        key={student.id}
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setCurrentView('cycle');
+                        }}
+                        className="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-200 text-xs font-medium transition-colors flex items-center gap-1"
+                        title="Launch Remediation Cycle"
+                      >
+                        <span>{student.name}</span>
+                        <span className="text-[10px] text-indigo-400 font-mono">({student.rollNo})</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+              {targetStudents.length > 0 && (
+                <button
+                  onClick={() => {
+                    setSelectedStudent(targetStudents[0]);
+                    setCurrentView('cycle');
+                  }}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium font-mono transition-colors shadow-sm"
+                >
+                  Launch Station in Learning Cycle →
+                </button>
+              )}
             </div>
 
             {/* Card Body with 21st.dev SpotlightCards */}

@@ -24,7 +24,7 @@ import { PulsingBadge } from './ui/PulsingBadge';
 import { AnimatedShinyText } from './ui/AnimatedShinyText';
 
 export function LearningCycleView() {
-  const { learningCycles, advanceLearningCycle, lang, setCurrentView } = useApp();
+  const { learningCycles, advanceLearningCycle, lang, setCurrentView, activeClass, students } = useApp();
   const [reassessModalCycle, setReassessModalCycle] = useState(null);
   const [reassessScore, setReassessScore] = useState(86);
 
@@ -111,10 +111,12 @@ export function LearningCycleView() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold font-display text-white">
-              {lang === 'hi' ? 'कक्षा 3-अ सक्रिय सुधार चक्र ट्रैकर' : 'Class 3A Active Improvement Trackers'}
+              {lang === 'hi' 
+                ? `${activeClass?.nameHi || activeClass?.name || 'कक्षा'} सक्रिय सुधार चक्र ट्रैकर` 
+                : `${activeClass?.name || 'Classroom'} Active Improvement Trackers`}
             </h3>
             <span className="text-xs text-slate-400">
-              {learningCycles.length} case studies undergoing the 6-stage transformation loop
+              {learningCycles.length} case studies undergoing the 6-stage transformation loop ({students?.length || 0} enrolled)
             </span>
           </div>
         </div>

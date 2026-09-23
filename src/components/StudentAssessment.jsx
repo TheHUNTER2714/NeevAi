@@ -261,6 +261,46 @@ export function StudentAssessment({ lang, onCompleteToDashboard }) {
     }
   };
 
+  if (!students || students.length === 0) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 py-12 text-center animate-fade-in">
+        <div className="glass-panel rounded-3xl p-8 sm:p-14 border border-white/10 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center">
+          <BorderBeam size={240} duration={7} colorFrom="#06b6d4" colorTo="#10b981" borderWidth={1.5} />
+          
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4 shadow-lg">
+            <GraduationCap className="w-8 h-8" />
+          </div>
+
+          <h3 className="text-xl sm:text-2xl font-bold font-display text-white mb-2">
+            {lang === 'hi' ? 'आकलन के लिए कोई छात्र नामांकित नहीं है' : 'No Students in Classroom Roster Yet'}
+          </h3>
+          <p className="text-sm text-slate-300 max-w-md mx-auto mb-6 font-body leading-relaxed">
+            {lang === 'hi'
+              ? 'नैदानिक परीक्षण (अंक तुलना, घटाव, मौखिक पठन) शुरू करने से पहले शिक्षक कॉकपिट में विद्यार्थियों का नामांकन करें।'
+              : 'Before running the 1-on-1 FLN screener, enroll students in your Teacher Cockpit manually or from a Word/PDF roster.'}
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <ShimmerButton
+              onClick={() => setIsAddStudentModalOpen(true)}
+              shimmerColor="#06b6d4"
+              className="px-5 py-2.5 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+            >
+              <span>{lang === 'hi' ? '+ नया विद्यार्थी जोड़ें' : '+ Enroll First Student'}</span>
+            </ShimmerButton>
+
+            <button
+              onClick={onCompleteToDashboard}
+              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-colors flex items-center gap-2"
+            >
+              <span>{lang === 'hi' ? 'शिक्षक कॉकपिट पर जाएं →' : 'Go to Teacher Cockpit →'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
       

@@ -5,6 +5,7 @@ import {
   Send, 
   Sparkles
 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import { BorderBeam } from './ui/BorderBeam';
 import { AnimatedShinyText } from './ui/AnimatedShinyText';
 import { PulsingBadge } from './ui/PulsingBadge';
@@ -13,18 +14,32 @@ import { TRANSLATIONS } from '../data/translations';
 
 export function AskLearnLensDrawer({ isOpen, onClose, lang }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const { students, activeClass, teacher } = useApp();
 
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  const studentCount = students?.length || 0;
+  const sampleStudent = students?.[0]?.name || (lang === 'hi' ? 'छात्र' : 'Student');
+  const flaggedStudents = (students || []).filter(s => s.status === 'intervention' || s.status === 'remediation' || s.status === 'attention');
+  const flaggedNames = flaggedStudents.slice(0, 3).map(s => s.name).join(', ') || 'flagged students';
+  const otherCount = Math.max(0, flaggedStudents.length - 3);
+  const cohortText = otherCount > 0 ? `${flaggedNames}, and ${otherCount} other students` : flaggedNames;
+
+  const flaggedNamesHi = flaggedStudents.slice(0, 3).map(s => s.nameHi || s.name).join(', ') || 'पहचाने गए विद्यार्थी';
+  const cohortTextHi = otherCount > 0 ? `${flaggedNamesHi}, और ${otherCount} अन्य बच्चे` : flaggedNamesHi;
+
+  const onTrackCount = (students || []).filter(s => s.status === 'on_track' || s.status === 'excelling').length;
+  const needSupportCount = flaggedStudents.length;
+
   // Initial chat history with realistic classroom-grounded prompts
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState(() => [
     {
       id: 'm1',
       sender: 'ai',
       text: lang === 'hi' 
-        ? 'नमस्ते सुनीता जी! मैं नींव AI (NeevAI) शिक्षक सहायक हूं। मैं कक्षा 3-अ के 42 विद्यार्थियों के आकलन डेटा से जुड़ा हूं। आप मुझसे किसी भी बच्चे की सीखने की कमी, गलतियों के पीछे का कारण या 15-मिनट की गतिविधियों के बारे में पूछ सकते हैं।'
-        : 'Good morning Sunita! I am your NeevAI Pedagogical Assistant, synced directly with Class 3A\'s 42 student profiles. You can ask me why specific students are struggling, how to conduct TaRL groupings, or request a 15-min zero-cost activity.'
+        ? `नमस्ते ${teacher?.name || 'शिक्षक'} जी! मैं नींव AI (NeevAI) शिक्षक सहायक हूं। मैं ${activeClass?.name || 'आपकी कक्षा'} के ${studentCount} नामांकित विद्यार्थियों के आकलन डेटा से जुड़ा हूं। आप मुझसे किसी भी बच्चे की सीखने की कमी, गलतियों के पीछे का कारण या 15-मिनट की गतिविधियों के बारे में पूछ सकते हैं।`
+        : `Good morning ${teacher?.name || 'Educator'}! I am your NeevAI Pedagogical Assistant, synced directly with ${activeClass?.name || 'your classroom'}'s ${studentCount} student profiles. You can ask me why specific students are struggling, how to conduct TaRL groupings, or request a 15-min zero-cost activity.`
     }
   ]);
 
@@ -32,12 +47,12 @@ export function AskLearnLensDrawer({ isOpen, onClose, lang }) {
     { label: 'ये छात्र घटाव में क्यों संघर्ष कर रहे हैं?', q: 'ये छात्र घटाव में क्यों संघर्ष कर रहे हैं? इसके पीछे क्या मानसिक भ्रांति है?' },
     { label: 'इन छात्रों के लिए 20-मिनट की गतिविधि बनाएं', q: 'कक्षा के कमजोर छात्रों के लिए 20-मिनट की मजेदार गतिविधि बनाएं।' },
     { label: 'अकेले शिक्षक के साथ 4 समूहों को कैसे संभालें?', q: 'एक कमरे में अकेले शिक्षक के साथ TaRL के 4 समूहों को एक साथ कैसे संचालित करें?' },
-    { label: 'राहुल शर्मा के लिए 10-मिनट का घरेलू अभ्यास बताएं', q: 'राहुल शर्मा के घटाव सुधार के लिए माता-पिता को क्या 10-मिनट का काम दिया जाए?' },
+    { label: `${sampleStudent} के लिए 10-मिनट का घरेलू अभ्यास बताएं`, q: `${sampleStudent} के सीखने में सुधार के लिए माता-पिता को क्या 10-मिनट का काम दिया जाए?` },
   ] : [
     { label: 'Why are these students struggling with subtraction?', q: 'Why are these students struggling with subtraction? What is the root misconception?' },
     { label: 'Create a 20-minute activity for these students', q: 'Create a 20-minute high-impact classroom activity for these struggling students.' },
     { label: 'How to manage 4 TaRL groups with 1 teacher?', q: 'How can a single teacher manage 4 TaRL ability groups simultaneously in one classroom?' },
-    { label: 'Suggest a 10-minute home quest for Rahul Sharma', q: 'Suggest a zero-cost 10-minute activity for Rahul Sharma that his parents can do with kitchen items.' },
+    { label: `Suggest a 10-minute home quest for ${sampleStudent}`, q: `Suggest a zero-cost 10-minute activity for ${sampleStudent} that parents can do with kitchen items.` },
   ];
 
   const handleSend = (textToSend) => {
@@ -57,8 +72,8 @@ export function AskLearnLensDrawer({ isOpen, onClose, lang }) {
 
       if (lowerQ.includes('why') && (lowerQ.includes('subtraction') || lowerQ.includes('struggling') || lowerQ.includes('संघर्ष') || lowerQ.includes('घटाव'))) {
         replyText = lang === 'hi'
-          ? '🔍 **घटाव में संघर्ष का गहन संज्ञानात्मक विश्लेषण (Cognitive Diagnosis):**\n\nकक्षा 3-अ के 8 बच्चे (राहुल, नेहा, आदि) घटाव में इसलिए अटक रहे हैं क्योंकि वे **"अंक उलटाव भ्रांति" (Top-from-Bottom Inversion Bug)** का शिकार हैं:\n\n1. **मूल कारण:** जब इकाई स्तंभ में 2 में से 7 घटाना होता है, तो बच्चे समझ नहीं पाते कि छोटी संख्या से बड़ी कैसे घटाएं। ऋणात्मक संख्या की असुविधा से बचने के लिए वे सहज रूप से बड़ी में से छोटी संख्या घटा देते हैं (7 - 2 = 5)।\n2. **दहाई का स्थानीय मान अभाव:** वे 52 को "5 दहाई + 2 इकाई" के रूप में देखने के बजाय दो स्वतंत्र अंक \'5\' और \'2\' मानते हैं। इसलिए वे दहाई से उधार लेने की आवश्यकता को नहीं पहचान पाते।\n\n🎯 **अगला कदम (शिक्षक के लिए):**\n- लिखित वर्कशीट बंद करें।\n- 10-10 तीलियों के 5 बंडल और 2 खुली तीलियां देकर उनसे 27 तीलियां अलग करने को कहें। जब वे देखेंगे कि 2 में से 7 नहीं निकल सकता, तो वे खुद 1 बंडल खोलेंगे (Unbundling)!'
-          : '🔍 **Cognitive Diagnosis: Why Students Struggle with Subtraction:**\n\nOur assessment reveals that Rahul, Neha, and 6 other students in Group B are exhibiting the classic **Top-From-Bottom Independent Digit Subtraction Bug**:\n\n1. **The Root Gap:** In problems like $52 - 27$, the units place requires subtracting $7$ from $2$. Because $2 < 7$, students feel cognitive dissonance. Instead of borrowing, they invert the operation: they subtract $7 - 2 = 5$.\n2. **Lack of Unitizing in Place Value:** They view $52$ as two detached digits (\'5\' and \'2\') rather than 5 bundles of ten and 2 units. Consequently, the concept of "regrouping 1 ten into 10 ones" is absent in their mental model.\n\n🎯 **Teacher Action Step:**\n- Stop abstract symbol worksheets.\n- Give them 5 matchstick bundles (of 10) and 2 loose sticks. Ask them to physically hand you 27 sticks. To give 7 ones, they will naturally be forced to untie 1 ten-bundle into 10 loose sticks!';
+          ? `🔍 **घटाव में संघर्ष का गहन संज्ञानात्मक विश्लेषण (Cognitive Diagnosis):**\n\n${activeClass?.name || 'कक्षा 3-अ'} के लक्षित बच्चे (${cohortTextHi}) घटाव में इसलिए अटक रहे हैं क्योंकि वे **"अंक उलटाव भ्रांति" (Top-from-Bottom Inversion Bug)** का शिकार हैं:\n\n1. **मूल कारण:** जब इकाई स्तंभ में 2 में से 7 घटाना होता है, तो बच्चे समझ नहीं पाते कि छोटी संख्या से बड़ी कैसे घटाएं। ऋणात्मक संख्या की असुविधा से बचने के लिए वे सहज रूप से बड़ी में से छोटी संख्या घटा देते हैं (7 - 2 = 5)।\n2. **दहाई का स्थानीय मान अभाव:** वे 52 को "5 दहाई + 2 इकाई" के रूप में देखने के बजाय दो स्वतंत्र अंक '5' और '2' मानते हैं। इसलिए वे दहाई से उधार लेने की आवश्यकता को नहीं पहचान पाते।\n\n🎯 **अगला कदम (शिक्षक के लिए):**\n- लिखित वर्कशीट बंद करें।\n- 10-10 तीलियों के 5 बंडल और 2 खुली तीलियां देकर उनसे 27 तीलियां अलग करने को कहें। जब वे देखेंगे कि 2 में से 7 नहीं निकल सकता, तो वे खुद 1 बंडल खोलेंगे (Unbundling)!`
+          : `🔍 **Cognitive Diagnosis: Why Students Struggle with Subtraction:**\n\nOur assessment reveals that ${cohortText} are exhibiting the classic **Top-From-Bottom Independent Digit Subtraction Bug**:\n\n1. **The Root Gap:** In problems like $52 - 27$, the units place requires subtracting $7$ from $2$. Because $2 < 7$, students feel cognitive dissonance. Instead of borrowing, they invert the operation: they subtract $7 - 2 = 5$.\n2. **Lack of Unitizing in Place Value:** They view $52$ as two detached digits ('5' and '2') rather than 5 bundles of ten and 2 units. Consequently, the concept of "regrouping 1 ten into 10 ones" is absent in their mental model.\n\n🎯 **Teacher Action Step:**\n- Stop abstract symbol worksheets.\n- Give them 5 matchstick bundles (of 10) and 2 loose sticks. Ask them to physically hand you 27 sticks. To give 7 ones, they will naturally be forced to untie 1 ten-bundle into 10 loose sticks!`;
       } else if (lowerQ.includes('20-minute') || lowerQ.includes('20 minute') || lowerQ.includes('20-मिनट') || lowerQ.includes('20 मिनट') || lowerQ.includes('activity')) {
         replyText = lang === 'hi'
           ? '📋 **20-मिनट की त्वरित कक्षा गतिविधि कार्ड: "दुकानदार और ग्राहक (10 का नोट)"**\n\n⏱️ **समय विभाजन (20 मिनट):**\n- **0-4 मिनट (हुक):** कक्षा में 2 बच्चों को दुकानदार और ग्राहक बनाएं। टॉफी की कीमत ₹27 है, ग्राहक के पास केवल ₹10 के 5 नोट और दो ₹1 के सिक्के हैं।\n- **4-12 मिनट (मूर्त मॉडल):** बच्चे देखते हैं कि ₹2 से ₹7 नहीं दे सकते, इसलिए दुकानदार 1 ₹10 का नोट लेकर 10 सिक्के खुले करवाता है। अब उसके पास 12 सिक्के हो जाते हैं!\n- **12-17 मिनट (सहपाठी अभ्यास):** 4-4 के समूह में कंकड़/तीलियों से $43 - 18$ और $61 - 25$ को इसी तरह हल करते हैं।\n- **17-20 मिनट (त्वरित जांच):** स्लेट पर 1 सवाल ($52 - 27$) हल करके दिखाते हैं।\n\n📦 **आवश्यक सामग्री:** शून्य लागत (कागज के नोट या कंकड़)।'
@@ -69,12 +84,12 @@ export function AskLearnLensDrawer({ isOpen, onClose, lang }) {
           : '🔍 **52 - 27 = 35 Misconception:**\n\nStudents are inverting units $7 - 2 = 5$ and tens $5 - 2 = 3$. Use concrete regrouping with bundles to resolve this within 3 classroom cycles.';
       } else if (lowerQ.includes('groups') || lowerQ.includes('1 teacher') || lowerQ.includes('अकेले शिक्षक') || lowerQ.includes('tarl')) {
         replyText = lang === 'hi'
-          ? '🏫 **1 शिक्षक + 4 TaRL समूह प्रबंधन रणनीति:**\n\n1. **समूह घ (उन्नत - 15 छात्र):** इन्हें "गणित जासूस" पहेली कार्ड दें और अनन्या वर्मा को सहपाठी मॉनिटर बनाएं।\n2. **समूह क और ग (15 छात्र):** फर्श पर चाक ग्रिड और शब्द कार्ड रिले में लगाएं।\n3. **शिक्षक का 15 मिनट का केंद्रित समय:** आपका पूरा 15 मिनट **समूह ख (घटाव उधार)** के साथ गोल घेरे में तीलियों के बंडल के साथ बीतेगा।\n\nहर 15 मिनट बाद भूमिकाएं बदलें।'
-          : '🏫 **Single-Teacher TaRL Group Management:**\n\n1. **Group D (15 On-Track students):** Give self-correcting Math Detective cards with peer captain.\n2. **Groups A & C (15 students):** Stationed at floor hopscotch grid with sight-word matching pairs.\n3. **Your Focused 15-Minute Block:** Spend 100% of direct instruction with **Group B (the 8 subtraction students)** using matchstick bundles.';
+          ? `🏫 **1 शिक्षक + 4 TaRL समूह प्रबंधन रणनीति:**\n\n1. **समूह घ (उन्नत - ${onTrackCount} छात्र):** इन्हें "गणित जासूस" पहेली कार्ड दें और सहपाठी मॉनिटर नियुक्त करें।\n2. **समूह क और ग:** फर्श पर चाक ग्रिड और शब्द कार्ड रिले में लगाएं।\n3. **शिक्षक का 15 मिनट का केंद्रित समय:** आपका पूरा 15 मिनट **लक्षित समूह (${needSupportCount} सहायता-प्राप्त छात्र)** के साथ गोल घेरे में तीलियों के बंडल के साथ बीतेगा।\n\nहर 15 मिनट बाद स्टेशन बदलें।`
+          : `🏫 **Single-Teacher TaRL Group Management:**\n\n1. **Group D (${onTrackCount} On-Track students):** Give self-correcting Math Detective cards with peer captain.\n2. **Groups A & C:** Stationed at floor hopscotch grid with sight-word matching pairs.\n3. **Your Focused 15-Minute Block:** Spend 100% of direct instruction with **Targeted Cohort (${needSupportCount} support students)** using matchstick bundles.`;
       } else {
         replyText = lang === 'hi'
-          ? `सलाह: कक्षा 3-अ के अनुसार, बुनियादी दहाई के स्थानीय मान पर ध्यान केंद्रित करने से 80% सीखने की खाइयां एक साथ भरी जा सकती हैं। क्या आप इसके लिए 15-मिनट की कार्ययोजना चाहते हैं?`
-          : `Pedagogical Recommendation: According to Class 3A's assessment matrix, focusing on Base-10 concrete grouping will simultaneously accelerate both subtraction and reading fluency. Would you like a printable lesson card for this?`;
+          ? `सलाह: ${activeClass?.name || 'कक्षा 3'} के अनुसार, बुनियादी दहाई के स्थानीय मान पर ध्यान केंद्रित करने से 80% सीखने की खाइयां एक साथ भरी जा सकती हैं। क्या आप इसके लिए 15-मिनट की कार्ययोजना चाहते हैं?`
+          : `Pedagogical Recommendation: According to ${activeClass?.name || 'Class 3A'}'s assessment matrix, focusing on Base-10 concrete grouping will simultaneously accelerate both subtraction and reading fluency. Would you like a printable lesson card for this?`;
       }
 
       setIsTyping(false);
@@ -113,7 +128,7 @@ export function AskLearnLensDrawer({ isOpen, onClose, lang }) {
                 </AnimatedShinyText>
               </h3>
               <PulsingBadge variant="emerald" className="text-[9px] py-0 px-2 mt-0.5">
-                Class 3A Synced (42 Students)
+                {activeClass?.name || 'Class 3A'} Synced ({studentCount} Students)
               </PulsingBadge>
             </div>
           </div>

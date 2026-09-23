@@ -24,8 +24,8 @@ export const TRANSLATIONS = {
     
     // Cockpit stats
     classLabel: "Class 3 — Section A",
-    enrolledCount: "42 Students Enrolled",
-    assessedCount: "38 Assessed (90%)",
+    enrolledCount: "Enrolled Students",
+    assessedCount: "Assessed Students",
     statusOnTrack: "On Track",
     statusAttention: "Needs Attention",
     statusIntervention: "Critical Intervention",
@@ -80,8 +80,8 @@ export const TRANSLATIONS = {
     beforeIntervention: "Baseline Diagnostic",
     weekTwo: "Week 2 Post-Intervention",
     weekFour: "Week 4 Post-Intervention",
-    gapsClosedStat: "14 of 16 Gaps Closed",
-    masteryGrowth: "+42% Class Mastery",
+    gapsClosedStat: "Gaps Successfully Closed",
+    masteryGrowth: "Class Mastery Recovery",
     
     // Student Modal
     profileTitle: "Student Learning Profile",
@@ -115,8 +115,8 @@ export const TRANSLATIONS = {
     
     // Cockpit stats
     classLabel: "कक्षा 3 — वर्ग 'अ'",
-    enrolledCount: "42 विद्यार्थी नामांकित",
-    assessedCount: "38 का आकलन संपन्न (90%)",
+    enrolledCount: "नामांकित विद्यार्थी",
+    assessedCount: "आकलन संपन्न",
     statusOnTrack: "स्तर के अनुकूल",
     statusAttention: "ध्यान देने योग्य",
     statusIntervention: "विशेष सहायता आवश्यक",
@@ -171,8 +171,8 @@ export const TRANSLATIONS = {
     beforeIntervention: "आरंभिक नैदानिक जांच",
     weekTwo: "हफ्ते 2 का मध्य आकलन",
     weekFour: "हफ्ते 4 का अंतिम आकलन",
-    gapsClosedStat: "16 में से 14 कमियां दूर",
-    masteryGrowth: "+42% कक्षा की समग्र प्रवीणता",
+    gapsClosedStat: "सीखने की कमियां दूर",
+    masteryGrowth: "कक्षा की समग्र प्रवीणता सुधार",
     
     // Student Modal
     profileTitle: "विद्यार्थी शिक्षण प्रोफ़ाइल",

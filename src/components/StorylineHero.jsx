@@ -219,8 +219,8 @@ export function StorylineHero({ onExploreCockpit, onTryAssessment, lang }) {
                 <h4 className="text-sm font-bold text-white mb-1.5 font-display">3. {lang === 'hi' ? 'मापने योग्य सुधार और प्रगति' : 'Measurable Gap Closure'}</h4>
                 <p className="text-xs text-slate-300 leading-relaxed font-body">
                   {lang === 'hi' 
-                    ? '4 हफ्तों में 42% से 78% दक्षता रिकवरी को ट्रैक करता है जो जे-पाल प्रभाव से प्रमाणित है।' 
-                    : 'Tracks actual competency recovery (42% to 78% in 4 weeks) aligned with J-PAL TaRL impact evidence.'}
+                    ? '4 हफ्तों में लक्षित दक्षता रिकवरी और वास्तविक सुधार को ट्रैक करता है जो जे-पाल प्रभाव से प्रमाणित है।' 
+                    : 'Tracks longitudinal competency recovery and systemic gap closure aligned with J-PAL TaRL impact evidence.'}
                 </p>
               </SpotlightCard>
             </div>

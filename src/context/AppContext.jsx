@@ -171,6 +171,31 @@ const DEFAULT_ASSESSMENTS = [
   }
 ];
 
+// Legacy Data Sanitizer: Automatically purge obsolete pre-set mock data (42 students, Rahul Sharma, Priya Patel)
+try {
+  const legacyKeys = ['learnlens_students', 'learnlens_learning_cycles'];
+  legacyKeys.forEach((key) => {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          if (
+            parsed.length === 42 ||
+            parsed.some(
+              (item) =>
+                (item.name && (item.name.includes('Rahul Sharma') || item.name.includes('Priya Patel'))) ||
+                (item.studentName && (item.studentName.includes('Rahul Sharma') || item.studentName.includes('Priya Patel')))
+            )
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (_) {}
+    }
+  });
+} catch (_) {}
+
 export function AppProvider({ children }) {
   // 1. Language state: 'en' or 'hi'
   const [lang, setLang] = useState(() => localStorage.getItem('learnlens_lang') || 'en');
@@ -597,8 +622,10 @@ export function AppProvider({ children }) {
   };
 
   const deleteStudent = (studentId) => {
-    setStudents((prev) => prev.filter((s) => String(s.id) !== String(studentId)));
-    if (selectedStudent && String(selectedStudent.id) === String(studentId)) {
+    const targetIdStr = String(studentId);
+    setStudents((prev) => prev.filter((s) => String(s.id) !== targetIdStr));
+    setLearningCycles((prev) => prev.filter((c) => String(c.studentId) !== targetIdStr));
+    if (selectedStudent && String(selectedStudent.id) === targetIdStr) {
       setSelectedStudent(null);
     }
   };
@@ -653,7 +680,17 @@ export function AppProvider({ children }) {
   // -------------------------------------------------------------
   // ACTIONS: ASSESSMENT ENGINE & COGNITIVE ANALYSIS
   // -------------------------------------------------------------
-  const recordAssessment = async (studentId, assessmentData) => {
+  const recordAssessment = async (arg1, arg2) => {
+    let studentId;
+    let assessmentData;
+    if (typeof arg1 === 'object' && arg1 !== null && !arg2) {
+      studentId = arg1.student_id || arg1.studentId;
+      assessmentData = arg1;
+    } else {
+      studentId = arg1;
+      assessmentData = arg2 || {};
+    }
+
     const targetIdStr = String(studentId);
     const student = students.find((s) => String(s.id) === targetIdStr);
     if (!student) {
@@ -754,7 +791,10 @@ export function AppProvider({ children }) {
       date: 'Just Now'
     };
 
-    setLearningCycles((prev) => [newCycleEntry, ...prev]);
+    setLearningCycles((prev) => {
+      const filtered = prev.filter((c) => String(c.studentId) !== targetIdStr);
+      return [newCycleEntry, ...filtered];
+    });
 
     // Asynchronous background sync without blocking local state
     syncAssessmentToCloud({
@@ -777,15 +817,19 @@ export function AppProvider({ children }) {
   // ACTIONS: REASSESSMENT & LEARNING CYCLE STEP ADVANCEMENT
   // -------------------------------------------------------------
   const advanceLearningCycle = (cycleId, reassessmentScore = 86) => {
+    let studentIdToUpdate = null;
+    const numScore = Number(reassessmentScore);
+
     setLearningCycles((prev) => 
       prev.map((c) => {
         if (c.id === cycleId) {
+          studentIdToUpdate = c.studentId;
           return {
             ...c,
-            step: 5,
-            reassessmentScore: Number(reassessmentScore),
+            step: 6,
+            reassessmentScore: numScore,
             reassessmentLevel: 'Grade 3.1',
-            growth: `+${Number(reassessmentScore) - c.baselineScore}% Mastery Recovery`,
+            growth: `+${numScore - c.baselineScore}% Mastery Recovery`,
             status: 'gap_closed',
             date: 'Completed'
           };
@@ -793,6 +837,43 @@ export function AppProvider({ children }) {
         return c;
       })
     );
+
+    // Simultaneously update student in classroom roster so all 6 sections synchronize
+    if (studentIdToUpdate) {
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (String(s.id) === String(studentIdToUpdate)) {
+            const updated = {
+              ...s,
+              status: 'on_track',
+              currentLevel: 'Grade 3.0',
+              currentLevelHi: 'कक्षा 3.0',
+              tarlGroup: 'Group D — On Track & Excelling',
+              tarlGroupHi: 'समूह घ — स्तरानुकूल एवं उन्नत',
+              detectedMisconception: null,
+              primaryGap: 'FLN Gap Closed (Mastered)',
+              primaryGapHi: 'सीखने की खाई दूर की गई (प्रवीणता प्राप्त)',
+              skills: {
+                ...s.skills,
+                subtractionBorrowing: Math.max(s.skills?.subtractionBorrowing || 0, numScore),
+                reading: Math.max(s.skills?.reading || 0, 75)
+              },
+              growthHistory: [
+                ...(s.growthHistory || []),
+                {
+                  date: 'Post-Intervention',
+                  score: numScore,
+                  label: 'Gap Closed'
+                }
+              ]
+            };
+            syncStudentToCloud(updated).catch(() => {});
+            return updated;
+          }
+          return s;
+        })
+      );
+    }
   };
 
   // -------------------------------------------------------------

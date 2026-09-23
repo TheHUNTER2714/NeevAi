@@ -74,7 +74,7 @@ export const LEARNLENS_GALLERY_DATA: GalleryItem[] = [
     binomial: 'Longitudinal Competency Impact',
     photo: {
       url: 'https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=800&q=80',
-      text: 'Rapid recovery from 42% to 78% foundational competency mastery in 4 weeks',
+      text: 'Accelerated recovery and verified foundational competency mastery in 4-week TaRL cycles',
       pos: '50% 35%',
       by: 'NEP NIPUN Bharat Mission'
     }

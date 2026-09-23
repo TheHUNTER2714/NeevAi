@@ -10,8 +10,13 @@ import {
   Lightbulb, 
   Boxes, 
   RefreshCw,
-  Zap
+  Zap,
+  Users,
+  ClipboardPen,
+  ChevronRight,
+  UserCheck
 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import { BorderBeam } from './ui/BorderBeam';
 import { AnimatedShinyText } from './ui/AnimatedShinyText';
 import { SpotlightCard } from './ui/SpotlightCard';
@@ -23,15 +28,55 @@ import { TRANSLATIONS } from '../data/translations';
 
 export function MisconceptionRadar({ lang }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const { 
+    students, 
+    activeClass, 
+    setCurrentView, 
+    setAssessmentTargetStudent, 
+    setIsAssessmentModalOpen,
+    setSelectedStudent 
+  } = useApp();
 
   const [selectedId, setSelectedId] = useState('misc-sub-top-bottom');
   
+  // Connect each catalog misconception with students from active classroom roster
+  const getAffectedStudents = (miscId) => {
+    if (!students || students.length === 0) return [];
+    return students.filter((s) => {
+      if (miscId === 'misc-sub-top-bottom') {
+        return (
+          s.detectedMisconception?.title?.toLowerCase().includes('top-from-bottom') ||
+          s.detectedMisconception?.example?.includes('35') ||
+          s.primaryGap?.toLowerCase().includes('borrowing') ||
+          s.primaryGap?.toLowerCase().includes('regrouping') ||
+          (s.skills && s.skills.subtractionBorrowing < 50 && (s.status === 'intervention' || s.status === 'attention'))
+        );
+      }
+      if (miscId === 'misc-num-digit-reversal') {
+        return s.primaryGap?.toLowerCase().includes('place value') || (s.skills && s.skills.placeValue < 50);
+      }
+      if (miscId === 'misc-read-hesitation') {
+        return (
+          s.detectedMisconception?.type?.includes('Phonetic') ||
+          s.primaryGap?.toLowerCase().includes('fluency') ||
+          s.primaryGap?.toLowerCase().includes('reading') ||
+          (s.skills && s.skills.reading < 50)
+        );
+      }
+      if (miscId === 'misc-read-guessing') {
+        return s.primaryGap?.toLowerCase().includes('decoding') || (s.skills && s.skills.wordDecoding < 50);
+      }
+      return false;
+    });
+  };
+
   // Interactive Custom Sandbox for Teachers/Judges to test ANY math problem!
   const [customNumA, setCustomNumA] = useState(64);
   const [customNumB, setCustomNumB] = useState(28);
   const [customAns, setCustomAns] = useState(46);
 
   const selectedMisconception = MISCONCEPTIONS_CATALOG.find((m) => m.id === selectedId) || MISCONCEPTIONS_CATALOG[0];
+  const flaggedForSelected = getAffectedStudents(selectedMisconception.id);
 
   // Dynamic diagnostic algorithm for the custom sandbox
   const diagnoseCustomProblem = (a, b, ans) => {
@@ -129,6 +174,7 @@ export function MisconceptionRadar({ lang }) {
 
           {MISCONCEPTIONS_CATALOG.map((item) => {
             const isSelected = item.id === selectedId;
+            const countInClass = getAffectedStudents(item.id).length;
             return (
               <SpotlightCard
                 key={item.id}
@@ -148,9 +194,17 @@ export function MisconceptionRadar({ lang }) {
                   }`}>
                     {item.symptomProblem}
                   </span>
-                  <span className="text-[10px] font-mono uppercase text-slate-400">
-                    {item.domain}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {countInClass > 0 ? (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold">
+                        {countInClass} Flagged
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono uppercase text-slate-500">
+                        {item.domain}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <h4 className="text-xs font-bold text-white leading-snug">
@@ -260,6 +314,58 @@ export function MisconceptionRadar({ lang }) {
                 </div>
               </div>
             </div>
+
+            {/* Live Classroom Roster Intelligence: Students Flagged in Active Class */}
+            {flaggedForSelected.length > 0 ? (
+              <div className="mt-6 p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 relative z-10 shadow-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-rose-500/20">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-rose-400" />
+                    <span className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+                      {flaggedForSelected.length} Enrolled Student{flaggedForSelected.length > 1 ? 's' : ''} in {activeClass?.name || 'Classroom'} Currently Exhibiting This Gap
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full self-start sm:self-auto border border-rose-500/30">
+                    Needs TaRL Station Intervention
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-3">
+                  {flaggedForSelected.map((stu) => (
+                    <div 
+                      key={stu.id}
+                      className="flex items-center gap-2 bg-slate-900/90 border border-rose-500/30 rounded-xl px-3 py-1.5 text-xs text-slate-200 shadow-sm"
+                    >
+                      <span className="font-mono text-cyan-400 font-bold">#{stu.rollNo}</span>
+                      <span className="font-semibold text-white">{lang === 'hi' ? stu.nameHi || stu.name : stu.name}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">{stu.currentLevel}</span>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (setSelectedStudent) setSelectedStudent(stu);
+                          setCurrentView('activities');
+                        }}
+                        className="text-[10px] font-mono text-amber-300 hover:text-amber-200 font-semibold underline ml-1 cursor-pointer"
+                        title="Start 15-Min Station"
+                      >
+                        Station →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-200 relative z-10">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{lang === 'hi' ? `कक्षा ${activeClass?.name || ''} में वर्तमान में किसी भी छात्र में यह भ्रांति नहीं है।` : `No students in ${activeClass?.name || 'current classroom'} are currently flagged with this gap.`}</span>
+                </span>
+                <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                  {students.length} Enrolled
+                </span>
+              </div>
+            )}
 
             {/* Cognitive Diagnosis with 21st.dev SpotlightCards */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
